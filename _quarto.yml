@@ -1,0 +1,64 @@
+project:
+  type: book
+
+book:
+  output-file: "TorkilRogenflaaten_MScthesis"
+  title: "Master Thesis"
+  subtitle: "Eight weeks of endurance training increases calcium release and uptake from skeletal muscle sarcoplasmic reticulum in sedentary adults" 
+  author: 
+  - name: "Torkil Rogneflaaten"
+    affiliations:
+      - name: "Inland Norway University of Applied Sciences"
+        department: "Faculty of Social and Helath Sciences"
+  date: "15 may 2024"
+  date-format: "MMMM YYYY"
+  chapters:
+    - index.qmd
+    - "00-abstract.qmd"
+    - "01-theory.qmd"
+    - "02-introduction.qmd"
+    - "03-method.qmd"
+    - "04-results.qmd"
+    - "05-discussion.qmd"
+    - "06-references.qmd"
+  appendices: 
+    - information_letter.qmd
+
+bibliography: resources/references.bib
+csl: resources/apa.csl
+
+format:
+  pdf:
+    documentclass: scrreprt
+    template-partials: 
+      - before-body.tex
+      - toc.tex
+    number-sections: true
+    linestretch: 1.5
+    mainfont: "Times New Roman"
+    sansfont: "Arial"
+    monofont: "Courier New"
+    fontsize: 12p
+    geometry:
+      - inner=3cm
+      - outer=3cm
+      - top=3cm
+      - bottom=4cm
+      - headsep=22pt
+      - headheight=11pt
+      - footskip=33pt
+      - ignorehead
+      - ignorefoot
+      - heightrounded
+    crossref: 
+      fig-title: ""
+      fig-prefix: ""
+      tbl-prefix: ""
+      tbl-title: ""
+      appendix-title: "Appendix"
+      appendix-delim: ":"
+      
+
+editor: source
+
+

@@ -1,0 +1,345 @@
+# Methods
+
+```{r, include = FALSE}
+
+source("./R/libs.R")
+source("./R/filter-id.R")
+source("./R/figures-source.R")
+
+# Settings for chunk options
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      dev = "cairo_pdf")
+
+```
+
+## Study design
+
+The current thesis was part of a larger research project (The Repeat Study, Mølmen et al., 2024, pre-registered ([OSF](https://osf.io/d6ahb?mode=&revisionId=&view_only=))). The study was approved by the Regional Committee for Medical and Health Research Ethics - Southeast Norway (aod. 2023-6-9, reference number, 591218) and the Norwegian Agency for Shared Services in Education and Research (data processing and storage, reference number, 499593). In the study, sedentary adults conducted two identical eight-week endurance training periods ("period 1" and "period 2"), separated by eight weeks of no training. An extensive test-battery was conducted before and after each training period to evaluate changes in physiological, hematological, and performance-related measures. The current study will solely focus on training period 1 and methods relevant to investigate the defined research questions. 
+
+The participants performed 24 interval sessions of indoor cycling training over a period of eight weeks. The endurance training consisted of three different interval sessions (Figure 1B), with the number of interval sessions per week varying between 2-4 sessions in a cyclic manner (Figure 1A). During the first week of training, the power output of the interval sessions corresponded to a percentage of the individual participant's mean power output during a 15 minute cycling trial (W~15min~), but was replaced and repeatedly updated by the individual mean power output during the 4x5 minute all-out effort session (W~4x5min~) throughout the eight weeks of training (Figure 1A,D). Oxygen consumption (VO~2~) was measured during one of the interval sessions in the third and the sixth week of the training intervention (Figure 1A). Resting muscle micro-biopsies were sampled $\sim$one week before the training intervention and >48 hours after the training intervention (Figure 1A). Endurance testing, consisting of a incremental cycling test to determine maximal oxygen consumption (VO~2max~) and maximal 1-minute aerobic power output (W~max~) and a 15-minute cycling trial, was conducted once $\sim$two weeks prior to the training intervention to get familiarized with the laboratory equipment and the test procedure [@edgett_reproducibility_2018], as well as twice over two consecutive days approaching the training intervention and once after the training intervention (Figure 1A). 
+
+```{r}
+#| fig-cap: "**Figure 1**. A) Study overview showing number of sessions per week together with time points for muscle micro-biopsy sampling, endurance testing, 4x5min all-out sessions and training sessions with VO~2~ measurement. B) Overview and design of training sessions, showing warmup (dot-dashed lines) and training (solid black lines). C) Individual (blue lines) and average group (black point and 95% CI error lines) W~4x5min~ during the 8-week training period. Abbreviations: W~4x5min~, average power output from the 4x5min session; VO~2~, oxygen consumption."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+#| fig-width: 6.5
+#| fig-height: 5.5
+#| fig-dpi: 600
+#| fig-align: "center"
+
+figure1 <- readRDS("./figures/rds/figure1.RDS")
+
+figure1
+
+```
+
+
+## Participants
+
+```{r}
+
+nfp <- cycling.data |>
+  filter(period == 1,
+         test == "max",
+         timepoint %in% c(2, 3, 7)) |>
+  group_by(timepoint) |>
+  summarise(n = n()) |>
+  pivot_wider(names_from = timepoint,
+              values_from = n) |>
+  mutate(sr = 37,
+         fam = 58)
+
+
+nfam <- paste0(sprintf("%.0f", nfp[1, 5]))
+
+npre1 <- paste0(sprintf("%.0f", nfp[1, 1]))
+
+npre2 <- paste0(sprintf("%.0f", nfp[1, 2]))
+
+npost <- paste0(sprintf("%.0f", nfp[1, 3]))
+
+ndiff <- paste0(sprintf("%.0f", nfp[1, 3] - nfp[1,4]))
+
+npostsr <- paste0(sprintf("%.0f", nfp[1, 4]))
+
+
+
+
+sex.data <- cycling.data |>
+  filter(timepoint == 2,
+         period == 1,
+         test == "sub_25") |>
+  select(id, sex)
+
+
+nsex.data <- sr.data |>
+  filter(timepoint == "pre") |>
+  group_by(id) |>
+  summarise(tau = mean(tau, na.rm = T)) |>
+  right_join(ids) |>
+  left_join(sex.data) |>
+  group_by(sex) |>
+  summarise(n = n())
+
+nmale <- paste0(sprintf("%.0f", nsex.data[2, 2])) 
+
+nfemale <- paste0(sprintf("%.0f", nsex.data[1, 2]))
+
+```
+
+Initially, `r nfam` volunteers were recruited to the study. Eligible participants were healthy adults between 30 and 65 years of age with a training history of less than one endurance training session per week during the last 12 months leading up to the study. Exclusion criteria were symptoms or history of disease, injuries affecting their ability to cycle with high intensity, and known adverse reactions to local anesthetics. Of the recruited participants, `r npost` completed the training intervention along with physiological testing. However, `r ndiff` were excluded from the results due to missing data in $\Delta$ Ca^2+^ release and uptake rates, leaving a total of *n* = `r npostsr` participants (females: *n* = `r nfemale`, males: *n* = `r nmale`; see Table 1 for participant characteristics). Prior to inclusion, participants were informed of any potential risks and discomfort associated with participation in the study, and they all gave their written informed consent prior to data collection (Appendix A). The study was conducted according to the Declaration of Helsinki of 1975. 
+
+\newpage
+
+
+```{r}
+
+
+desc_data <- final.data |>
+  ungroup() |>
+  right_join(ids) |>
+  filter(test %in% c("max", "per"),
+         timepoint == "pre",
+         period == 1) |>
+  select(id,
+         sex,
+         test,
+         age,
+         height,
+         weight,
+         watt,
+         vo2,
+         vo2.kg) |> 
+  pivot_wider(names_from = test,
+              values_from = age:vo2.kg) |>
+  mutate(bmi = weight_per/(height_per/100)^2) |>
+  select(id,
+         sex,
+         age = age_per,
+         height = height_per,
+         weight = weight_per,
+         bmi,
+         per = watt_per,
+         wmax = watt_max,
+         vo2max = vo2_max,
+         vo2max.kg = vo2.kg_max) |>
+  group_by(sex) |>
+  mutate(N = n()) |> 
+  relocate(N, .before = age) |>
+  pivot_longer(names_to = "variable",
+               values_to = "value",
+               cols = N:vo2max.kg) |> 
+  mutate(variable = factor(variable,
+                           levels = c("N",
+                                      "age",
+                                      "height",
+                                      "weight",
+                                      "bmi",
+                                      "vo2max",
+                                      "vo2max.kg",
+                                      "wmax",
+                                      "per"),
+                           labels = c("n",
+                                      "Age (years)",
+                                      "Body height (cm)",
+                                      "Body mass (kg)",
+                                      "Body mass index (kg ∙ m^2 )",
+                                      "VO_2max (mL ∙ min^-1 )",
+                                      "VO_2max (mL ∙ kg^-1 / min^-1 )",
+                                      "W_max (watt)",
+                                      "W_15min (watt)"))) |>
+  group_by(sex,
+           variable) |>
+  summarise(m = mean(value, na.rm = T),
+            s = sd(value, na.rm = T)) |>
+  ungroup() |>
+  pivot_wider(names_from = sex,
+              values_from = c(m, s)) |> 
+  select(variable, 
+         m_f,
+         s_f, 
+         m_m,
+         s_m) |>
+  filter(variable != "n") |>
+  gt() |>
+  cols_merge(columns = c(m_f, s_f),
+             pattern = "{1}<< \u00b1 {2}>>") |>
+  cols_merge(columns = c(m_m, s_m),
+             pattern = "{1}<< \u00b1 {2}>>") |>
+  cols_label(variable = "",
+             m_f = md("Female (*n* = 16)"),
+             m_m = md("Male (*n* = 21)")) |>
+  fmt_units(columns = variable) |>
+  cols_add(dec_digits = c(1, 1, 1, 1, 0, 1, 0, 0)) |>
+  fmt_number(decimals = from_column(column = "dec_digits"),
+             sep_mark = "") |>
+  cols_hide(columns = dec_digits) |>
+  cols_align(variable, align = "left") |>
+    tab_header(title = md("**Table 1**. Participant characteristics")) |>
+  tab_source_note(source_note = md("Abbreviations: VO~2max~, maximal oxygen uptake from the highest 30 second time interval during the incremental cycling test; W~max~, maximal aerobic power measured as the average power output from the last minute of the incremental cycling test; W~15min~, average power output during the 15 minute cycling trial"))
+  
+  
+desc_data
+
+
+```
+
+
+## Endurance training 
+
+The interval training sessions were performed in training facilities at Inland Norway University of Applied Sciences, campus Lillehammer, on a stationary cycling trainer device (Tacx NEO T8000 Bike Smart, Wassenaar, the Netherlands). The seat height, handlebar position, and horizontal distance between of the seat and bottom bracket on the stationary cycling trainer were adjusted according to each participant's preference at the first session and replicated during subsequent sessions. All interval sessions were completed as supervised group sessions (2-7 participants). The power output during the interval sessions corresponded to a percentage of the individual W~4x5min~, which was controlled by pre-programmed workouts using an app (Tacx Training-app, version 4.52.1, Garmin Ltd., the Netherlands) connected to the trainer device. The interval sessions consisted of three different 45 minutes sessions, i.e. a 4x5min session with maximal effort, a 4x8min session with interchanging 30's and 15's work efforts at 108% and 54% of W~4x5min~ respectively, and a 6x6min session with sustained effort at 65% of W~4x5min~ (see Figure 1B).
+
+The 4x5min session began with a warm up protocol consisting of two identical incremental intervals of three minutes at 50% of W~4x5min~, two minutes at 70% and one minute at 90% with inter-interval active recovery periods of three minutes at 30%. For the 4x5min sessions, the power output during the five minute intervals were set to 100% of the previous W~4x5min~. However, the participants received instructions to adjust the power output "freely" to achieve the highest possible mean power output from all four interval bouts, and they received strong verbal encouragement throughout the session. Inter-interval active recovery periods were set to 2.5 minutes at 30%. Power output during the interval bouts were recorded using a cycling computer (Garmin Edge 530 or Garmin Edge 1040, Garmin Ltd., Olathe, Kansas, USA) for calculation of W~4x5min~. 
+
+The 4x8min session began with a warm up protocol consisting of two minutes at 50% of W~4x5min~, two minutes at 70%, one minute at 90% and two minutes at 30%. The eight minute intervals were set to average 90% with interchanging 30's and 15's work efforts at 108% and 54% respectively, with inter-interval active rest periods of two minutes at 30%. Oxygen consumption (VO~2~) was measured in two of the 24 interval sessions (both being a 4x8min session) with sampling time every 10^th^ s using a metabolic system with mixing chamber (Vyntus CPX, Erich Jaeger, Hoechberg, Germany) during the working intervals (VO~2~ measurement session; Figure 1A). The metabolic system was calibrated before each of the two VO~2~ measurement sessions. Briefly, using certified calibration gasses of known concentrations to calibrate the internal gas analyzers and an internal pump to calibrate airflow through a digital volume transducer (DVT, Erich Jaeger). During the VO~2~ measurement sessions, blood samples from the fingertip were obtained immediately after each work-interval for determination of blood lactate concentration ([La-]; Biosen C-line Lactate analyzer, EKF Diagnostic GmbH, Barleben, Germany). 
+
+The 6x6min session began with a warmup-protocol consisting of 1.5 minutes at 50% of W~4x5min~, 1.5 minutes at 70% and one minute at 50%. The six minutes intervals were set to sustain 65% with inter-interval active recovery periods of one minute at 30%. 
+
+
+Rate of perceived exhaustion (RPE) was recorded immediately after each work-interval during all interval-sessions using Borg’s 6-20 scale [@borg_psychophysical_1982]. If the power output was perceived as "too easy" or "too hard" (4x8min: RPE < 15 after 1st interval, or RPE < 16 after 2nd interval, or RPE > 19, 6x6min: RPE < 11 after 1st interval, or RPE < 12 after 2nd interval, or RPE > 15), the power output was adjusted up or down by 5 %-points in regard to % of W~4x5min~, respectively. Heart rate (HR) and power output was recorded continuously throughout all interval-sessions by the Tacx NEO T8000 Bike Smart and Taxc Training-app. Data from the interval sessions are presented in Table 2. 
+
+
+```{r}
+
+
+vo2.data <- vo2.session.data |>
+  right_join(ids) |> 
+  select(vo2.percent,
+         lac) |>
+  pivot_longer(names_to = "variable",
+               values_to = "value",
+               cols = c(vo2.percent, lac)) |>
+  group_by(variable) |>
+  summarise("4x8_m" = mean(value, na.rm = T),
+            "4x8_sd" = sd(value, na.rm = T))
+
+
+table.2 <- session.data |>
+  mutate(id = as.factor(id)) |>
+  right_join(ids) |>
+  group_by(type) |> 
+  summarise(hr_m = mean(hr, na.rm = T),
+            hr_sd = sd(hr, na.rm = T),
+            hr.max_m = mean(hr.max, na.rm = T),
+            hr.max_sd = sd(hr.max, na.rm = T),
+            watt_m = mean(watt, na.rm = T),
+            watt_sd = sd(watt, na.rm = T),
+            rpe_m = mean(rpe, na.rm = T),
+            rpe_sd = sd(rpe, na.rm = T)) |>
+  filter(!is.na(type)) |> 
+  pivot_longer(names_to = c("variable", "stat"),
+               names_sep = "_",
+               values_to = "value",
+               cols = hr_m:rpe_sd) |> 
+  pivot_wider(names_from = c("type", "stat"),
+              names_glue = "{type}_{stat}",
+              values_from = value) |>
+  full_join(vo2.data) |>
+  mutate(variable = factor(variable,
+                           levels = c("hr.max",
+                                      "hr",
+                                      "watt",
+                                      "rpe",
+                                      "lac",
+                                      "vo2.percent"),
+                           labels = c("Maximal HR (beats ∙ min^-1 )",
+                                      "Average HR (beats ∙ min^-1 )",
+                                      "Average power output (watt)",
+                                      "Average RPE (6-20)",
+                                      "Average [La-] (mmol ∙ L^-1 )",
+                                      "Average VO_2 (% of VO_2max )"))) |>
+  gt() |>
+  cols_merge(columns = c("4x5_m", "4x5_sd"),
+             pattern = "{1}<< \u00b1 {2}>>") |>
+  cols_merge(columns = c("4x8_m", "4x8_sd"),
+             pattern = "{1}<< \u00b1 {2}>>") |>
+  cols_merge(columns = c("6x6_m", "6x6_sd"),
+             pattern = "{1}<< \u00b1 {2}>>") |>
+  cols_label(variable = "",
+             "4x5_m" = "4x5min",
+             "4x8_m" = "4x8min",
+             "6x6_m" = "6x6min") |>
+  fmt_units(columns = variable) |>
+  cols_add(dec_digits = c(0, 0, 0, 1, 1, 1)) |>
+  fmt_number(decimals = from_column(column = "dec_digits"),
+             sep_mark = "") |>
+  cols_hide(columns = dec_digits) |>
+  cols_align(variable, align = "left") |>
+  tab_header(title = md("**Table 2**. Interval session data")) |>
+  tab_source_note(source_note = md("Abbreviations: HR, heart rate; RPE, rate of perceived exhaustion (BORG scale); [La-], blood lactate concentrations; VO~2~, oxygen consumption"))
+  
+  
+  
+table.2
+  
+
+```
+
+
+## Endurance testing
+
+### Testing procedures
+
+Endurance testing was conducted at the physiological test laboratory at Inland Norway University of Applied Sciences, campus Lillehammer. The participants were instructed to refrain from any exercise training during the two days prior to the endurance testing, and replicate their nutrient intake in the day leading up to the test day (self-reported at familiarization testing; Figure 1A). The individual participant had the same test leader at all time points, and strong verbal encouragement during the maximal tests were given to ensure maximal effort. All endurance testing was performed on an electromagnetically-braked cycle ergometer (Lode Excalibur Sport, Groningen, The Netherlands), and metabolic responses were measured with a metabolic system with mixing chamber, Vyntus CPX (previously described; Endurance training protocol 3.3). The seat height, handlebar position, and horizontal distance between the seat and bottom bracket on the electromagnetically-braked cycle ergometer was adjusted according to each participant's preference at the familiarization test and replicated during subsequent tests. All cycling tests were performed in a seated cycling position. Endurance testing was initiated by a standardized warm up protocol, consisting of two 5.5-minutes submaximal cycling bouts at 25% and 40% of W~max~ from the previous endurance test timepoint. At familiarization testing, power output of these warm up bouts were set to pre-defined values of 60 and 100 W for males and 40 and 60 W for females, respectively.
+
+### Maximal oxygen consumption and maximal aerobic power output
+
+VO~2max~ and W~max~ were determined by an incremental cycling test performed to exhaustion. The test started at the 20 W increment closest to the individual participant's 40% of W~max~ and increased by 20 W until exhaustion, defined as the cadence dropping < 60 revolutions per minute. VO~2~ was measured every 5^th^ s, and VO~2max~ was defined as the highest 30 s average during the test (i.e., highest rolling average of six consecutive 5 s measures). W~max~ was defined as the average power output during the last minute of the incremental test. The participant's adjusted the cadence freely during the entirety of the test.
+
+### 15-minute cycling trial
+
+The participants were given 10 minutes of active recovery cycling after the incremental test before starting the 15-minute cycling trial. The test started at 60% of W~max~, however, the participants adjusted the power output freely during the test with an external control unit placed by the handlebar, with the aim of achieving the highest average power output throughout the test. W~15min~ was defined as the average power output during the entire 15-minute cycling trial. Based on the ratio in performance from the incremental test to the 15-minute cycling trial, was a durability index calculated as the percentage of W~15min~ in relation to the W~max~. 
+
+## Muscel biopsy sampling
+
+Muscle specimens (10-25 mg per sample) were obtained approximately 15 cm above the knee joint of the *m. vastus lateralis* muscle under local anesthesia of the skin, subcutaneous tissue, and muscle fascia (Xylocain 10 mg mL^−1^, AstraZeneca, Aspen Pharma Trading Limited, Dublin, Ireland). This muscle was preferred because it is highly active during cycle exercise [@henriksson_integrated_1974]. The micro-biopsy technique was used, in which, a disposable 12 gauge needle (Universal Plus, Mermaid medical A/S, Stenløse, Denmark) operated with a spring-loaded biopsy gun (Bard Magnum, Bard Norway A/S, Oslo, Norway) was passed into the muscle two to four times to collect enough material. The material was blotted on filter paper, dissected free from visible fat and connective tissue and homogenized in ice-cold homogenizing buffer (300 mM sucrose, 1 mM ethylene diamine-tetra-acetic acid (EDTA), 10 mM NaN~3~, 40 mM Tris-base, 40 mM l-histidine, pH 7.8) [@obrien_calcium_1990]. Homogenization was done in $\sim$ 30 s, without under/over pressure, using a Potter-Elvehjem homogenizer (Fischerbrand, Thermo Fisher Scientific, Waltham, Massachusetts). The muscle tissue was kept ice cold during the whole procedure. The obtained homogenate was immediately frozen and stored at −80°C until further analysis. 
+
+### SR vesicle Ca^2+^ release and uptake rates in muscle homogenate
+
+The obtained muscle homogenate was transferred to- and analysed for SR vesical Ca^2+^ release and uptake rates at the scientific laboratory of the University of Southern Denmark, Odense. SR Ca^2+^ vesical uptake and release rates were analyzed *in vitro* using the Ca^2+^-binding fluorescent dye "indo-1" on a fluorometer (20 Hz, Ratiomaster RCM, Photon Technology International, Brunswick, NJ, USA). The excitation wavelength was 355 nm, and the emission wavelength was continuously measured at 400nm (emission peak of Ca^2+^-saturated indo-1) and 470 nm (emission peak of Ca^2+^-free indo-1). The ratiometric data were collected every 0.5^th^ s in a thermostated cuvette holder at 37$^\circ$C with continuous stirring by a magnetic bar. The reaction was initiated by adding 30 $\mu$ of muscle homogenate to a 2 ml assay buffer consisting of 165 mM KCl, 22 mM HEPES, 5.5 $\mu$M*N*,*N*,*N*′,*N*′-tetrakis(2-pyridylmethyl)ethylenediamine (TPEN), 7.5 mM oxalate, 11 mM NaN~3~, 20 $\mu$M CaCl~2~, 2 mM MgCl~2~, and indo-1 to a final concentration of 1 $\mu$M (pH 7.0). TPEN was added to prevent perturbation of heavy metal ions in the indo-1 measurements without disturbing free Ca^2+^ concentrations ([Ca^2+^]~free~). Oxalate facilitated the SR Ca^2+^-accumulation, and the addition of NaN~3~ blocked mitochondrial Ca^2+^ sequestering activity. [Ca^2+^]~free~ was derived from the subsequent ratiometric data according to the equation: $[Ca^{2+}]_{free} = K_d \times \frac {R − R_{min}} {R_{max} − R} \times (S_{f2} / S_{b2})$ [@grynkiewicz_new_1985], where K~d~ is the dissociation constant of indo-1 and Ca^2+^ (measured with a Ca^2+^ calibration buffer kit (Molecular Probes, Eugene, OR)), R is the ratio value between emission wavelengths, R~max~ is the limiting ratio value between emission wavelengths when all the indo-1 is saturated with Ca^2+^, R~min~ is the limiting ratio value between emission wavelengths when all the indo-1 is in the Ca^2+^ free form, and the factor S~f2~/S~b2~ is the fluorescence intensity measured at 470 nm when all the indo-1 is free from or saturated with Ca^2+^, respectively. R~max~ and R~min~ was determined in each test to calibrate the fluorescence signal. 
+
+[Ca^2+^]~free~ in the buffer was above 1000 nM, but decreased to $\sim$ 800 nM immediately after the muscle homogenate was injected, because of EDTA and protein binding of Ca^2+^ [@ruell_measurement_1995]. Thereafter, SR Ca^2+^ uptake was initiated by adding 2 mM ATP to a final concentration of 5 mM and the ATP-driven oxalate-supported SR Ca^2+^ uptake was followed until the [Ca^2+^] plateaued, $\sim$ 300 s. Then, SR Ca^2+^ uptake was blocked by addition of cyclopiazonic acid (CPA), and subsequent inactivation of SERCA, to the assay buffer. The CPA was incubated in the assay buffer for 30 s before SR Ca^2+^ release was initiated by the addition of 5 mM 4-chloro-M-Cresol (4-CmC) to the assay buffer, which followed for at least 30 s (Figure 2). Subsequent raw-data of [Ca^2+^]~free~ over time was imported into Matlab version 7.0.1 (The MathWorks, Natick, MA, USA) and the resulting curve was smoothed over 15 points using mono-exponential equations based on Savitsky-Golay algorithm (Curve Fitting Toolbox version 1.1.1; The MathWorks). 
+
+The SR Ca^2+^ uptake rate (uptake~tau~) was defined as the time (s) for [Ca^2+^]~free~ to decrease by 63% (using data-points between 700 nM [Ca^2+^]~free~ and [Ca^2+^]~free~ upon CPA addition), and calculated as 1/b using the following equation: $[Ca^{2+}]_{free} = ae - b\tau + c$. In addition, SR Ca^2+^ uptake rates were determined at 600 and 200 nM [Ca^2+^]~free~ from the derivative of the curve (uptake~600nM~ and uptake~200nM~, respectively). This roughly translates to the physiological levels of [Ca^2+^]~i~ during tetanic contractions and in resting muscle fibers, respectively [@bruton_mitochondrial_2003; @ingalls_intracellular_1999]. The SR Ca^2+^ leak rate was estimated during the period between addition of CPA into the buffer assay and initiation of Ca^2+^ release, and defined as the derivative of the curve. SR Ca^2+^ release rate was calculated during the first 30 s after 4-CmC stimulated Ca^2+^ release and was defined as the derivative of the initial release. Values obtained for SR Ca^2+^ uptake and release rates are relative and expressed as arbitrary units; $\mu$mol $\cdot$ g protein^-1^ $\cdot$ min^-1^. Uptake~tau~ is expressed as s^-1^ $\cdot$ mg protein^-1^, i.e. higher value for a faster reuptake. Changes from baseline to after training in SR vesicle Ca^2+^ release and uptake is expressed as percentage changes using the following equation; $change = exp(log(change) - 1) \times 100$, because of the large inter-individual variation in SR vesicle Ca^2+^ release and uptake rates. The whole procedure was performed in duplicate. Protein content in the muscle homogenate was also measured in duplicate using a standard kit (Pierce BCA protein reagent no. 23225).  
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-height: 50
+#| fig-dpi: 135
+#| fig-align: "center"
+#| fig-cap: "**Figure 2**. Representative example of measurements of parameters associated with SR vesicle Ca^2+^ release and uptake rates. The [Ca^2+^]~free~ was determined fluorometrically and the SR vesicle Ca^2+^ uptake was initiated by adding ATP (5mM). After approximately 300 s, CPA was added in order to block SR vesicle uptake and to estimate SR Ca^2+^ leak rate. SR Ca^2+^ release was initiated by the addition of 5 mM 4-CmC to the assay buffer, which followed for at least 30 s. The time (τ) for [Ca^2+^]~free~ to decrease by 63% during ATP-driven SR vesicle Ca^2+^ uptake was calculated as 1/b from the equation; [Ca^2+^]~free~ = ae-bt+c. SR Ca^2+^ release rate was obtained by mathematically fitting the data points during the first 30 s of release and then determine the rate of Ca^2+^ release as the derivative of the initial release. The graph is from the scientific laboratory of the University of Southern Denmark, Odense and used with permition from Niels Ørtenblad (Professor, Head of Research Unit). Abbreviations: SR, sarcoplasmic reticulum; Ca^2+^, calcium; [Ca^2+^]~free~, concentration of free calcium; ATP, adenosine triphosphate; CPA, cyclopiazonic acid; 4-CmC, 4-chloro-M-Cresol."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+
+
+figure2 <- image_read("./figures/figure2.png")
+
+# Printing the image
+figure2 <- print(figure2, info = FALSE) 
+
+
+figure2
+
+```
+
+\newpage
+
+### MCH distribution
+
+MHC analysis was performed on the same muscle homogenate as for the analysis of SR vesicle Ca^2+^ release and uptake rates. 200 $\mu$l of lysine buffer containing 10% glycerol, 5% 2-mercaptoethanol and 2.3% sodium dodecyl, 62.5 mM Tris-base and 0.2% bromophenolblue (pH 6.8) was mixed with 80 $\mu$l muscle homogenate and boiled in water at 100$^\circ$C for 3 minutes. 10–40 $\mu$l of the sample-buffer was loaded on to a sodium dodecyl sulphate-polyacrylamide (SDS-PAGE) gel with 6% polyacrylmide (100:1 acrylmid : bis-acrylmid), 30% glycerol, 0.4% sodium dodecyl, 67.5 mM Tris-base, and 0.1 M glycine. SDS-PAGE gels were run at 80 V for at least 42 hours at 4$^\circ$C, followed by 2–4 hours of 200 V at 4$^\circ$C. Subsequently, the gels were stained with Coomassi and MHC bands made visible. The gels were scanned (Lino-scan 1400 scanner, Heidelberg, Germany) and the relative proportions of MHC type I (MHC-I), MCH type IIA (MHC-IIA), and MCH type IIX (MHC-IIX) isoforms were determined densitometrically (Phoretix 1D, non-linear, Newcastle, United Kingdom). The whole procedure was performed in duplicate and the average of the two values was used to define relative proportions in MHC-I, MHC-II and MHC-IIx.
+
+## Statistics and data analysis
+
+Descriptive data are presented as mean and standard deviation (mean $\pm$ SD), unless otherwise stated. All data analysis was performed in R (version 4.4.0). To assess the effect of endurance training on SR Ca^2+^ release and uptake rates, linear mixed-effects models (LMMs) were specified with time as the main fixed effect and sex as a co-variate. Sex differences in SR Ca^2+^ release and uptake rates at baseline as well as the effect of endurance training was also assessed using LMMs specified with time and time to sex interaction as the fixed effects. Relative interactions between sexes were estimated as females compared to males, and models with a robust sex or sex to time interaction, i.e. 95% confidence intervals (CI) not including 0, were refitted with the relative proportion of MHC-II as co-variate to asses potential effects of MHC distribution on the observed interactions. Log-transformed SR Ca^2+^ release and uptake rates were specified as the dependent variable.
+
+The general efficacy of the training intervention, i.e. $\Delta$ VO~2max~, $\Delta$ W~max~, $\Delta$ W~15min~, $\Delta$ durability index and $\Delta$ W~4x5min~, were assessed using LMMs specified with time as the fixed effect. The potential effect of changes in SR Ca^2+^ release and uptake rates on $\Delta$ W~15min~, $\Delta$ W~max~, $\Delta$ VO~2max~ and $\Delta$ durability index was assessed using linear regression models (LMs) with absolute changes in W~15min~, W~max~, VO~2max~ and durability index as the response variable and percentage changes in Ca^2+^ release and uptake rates as the predictor variable. Baseline values and sex was defined as co-variates. LMs specified with W~15min~, W~max~, VO~2max~, and durability index as the response variable and normalized SR Ca^2+^ release and uptake rates ($value = x_i / max(x) \times 100$) as the predictor variable, and sex as co-variate was used to explore the relationships between baseline values in SR Ca^2+^ release- and uptake rates and cycling performance, VO~2max~ and durability index. 
+
+The general change in MHC distribution was assessed using LMMs specified with time and MHC isoform (i.e., MHC-I, MHC-IIa and MHC-IIx) as the fixed effect. Subsequently, the MHC data were pooled into relative distribution of MHC-II (MHC-IIa and MHC-IIx) vs MHC-I and a LMM specified with time as the fixed effect and sex as a co-variate was used to assess the effect of training on relative proportion of MHC-II. Potential sex differences in relative proportion of MHC-II at baseline and in change after training was assessed with a LMM specified with time and time to sex interaction as fixed effects. LMs specified with absolute baseline values in SR Ca^2+^ release and uptake response and the relative proportion of MHC-II at baseline as the predictor variable, was used to asses potential effects of relative MHC-II distributions on SR Ca^2+^ release and uptake. 
+
+The effect of potential changes in both the relative proportion of MHC-II and percent of VO~2max~ during interval sessions on changes in SR Ca^2+^ release and uptake rates was assessed using LMs specified with percentage change in Ca^2+^ release and uptake rates from baseline as the response variable and absolute change in relative proportion of MHC-II and percent of VO~2max~ during interval sessions as the predictor variables. Baseline values and sex was used as co-variates. In addition, potential relationships between baseline values in relative proportion of MHC-II and percent of VO~2max~ during interval session was assessed using a LM specified with percent of VO~2max~ during interval session as the response variable and relative proportion of MHC-II as the predictor variable.
+
+All LMMs were fitted using the lme4-package written for R [@bates_fitting_2015] and specified with random intercept for participants, and random intercepts for time at the level of participants to account for duplicate measures in SR Ca^2+^ release and uptake and MHC distribution. Inference about effects of interest was drawn based on point estimates and their 95% CI [@calin-jageman_estimation_2019]. CI not containing null effects was interpreted as robust effects. The adjusted R^2^ value (R^2^~a~) was calculated to analyze the proportion of the variance in the response variable that can be explained by the predictor variables in all respective LMs. All LMMs were assessed for uniformity of variance over the fitted range by visual inspection of residuals plotted over the fitted values and normal distribution of residuals were evaluated by inspecting a standardized normal probability plot. All LMs were visually inspected for normal distribution and homoscedasticity of residuals using plots of residuals and fitted values. Complete datasets and scripts can be downloaded here: (https://github.com/Rogneflaaten/repeatData)

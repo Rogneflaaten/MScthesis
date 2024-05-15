@@ -1,0 +1,2284 @@
+# Results
+
+```{r, include = FALSE}
+
+source("./R/libs.R")
+# Settings for chunk options
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      dev = "cairo_pdf")
+
+```
+
+## General efficacy of the training intervention
+
+```{r general-change-data}
+
+max_vo2 <- readRDS("./data/derivedData/fitness/max_vo2.RDS")
+max_watt <- readRDS("./data/derivedData/fitness/max_watt.RDS")
+per_watt <- readRDS("./data/derivedData/fitness/per_watt.RDS")
+dur_change <- readRDS("./data/derivedData/fitness/dur_m1.RDS")
+
+
+general_confint <- data.frame(confint(max_vo2)) |>
+  full_join(data.frame(confint(max_watt))) |>
+  full_join(data.frame(confint(per_watt))) |> 
+  mutate(variable = c(rep("vo2max", 4),
+                      rep("wmax", 4),
+                      rep("per", 4)),
+         coef = rep(c("",
+                      "",
+                      "intercept",
+                      "change"),
+                    3))
+
+general_data <- data.frame(summary(max_vo2)$coef) |>
+  full_join(data.frame(summary(max_watt)$coef)) |>
+  full_join(data.frame(summary(per_watt)$coef)) |> 
+  mutate(variable = c(rep("vo2max", 2),
+                      rep("wmax", 2),
+                      rep("per", 2)),
+         coef = rep(c("intercept",
+                      "change"),
+                    3)) |>
+  left_join(general_confint) |>
+  rename("lower.ci" = "X2.5..",
+         "upper.ci" = "X97.5..")
+
+
+
+# vo2max
+vo2max_change <- paste0(sprintf("%.1f", general_data[2, 1] / general_data[1, 1] * 100),
+                        "% [",
+                        sprintf("%.1f", general_data[2, 6] / general_data[1, 6] * 100), 
+                        ", ",
+                        sprintf("%.1f", general_data[2, 7] / general_data[1, 7] * 100),
+                        "]")
+
+
+vo2max.sum <- readRDS("./data/derivedData/fitness/vo2max.sum.RDS")
+
+
+
+vo2max_baseline <- paste0(sprintf("%.0f", vo2max.sum[1, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", vo2max.sum[1, 3]),
+                  " mL \U00B7 min\U207B\U00B9")
+
+vo2max_post <- paste0(sprintf("%.0f", vo2max.sum[2, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", vo2max.sum[2, 3]),
+                  " mL \U00B7 min\U207B\U00B9")
+
+
+
+
+#wmax
+wmax_change <- paste0(sprintf("%.1f", general_data[4, 1] / general_data[3, 1] * 100),
+                      "% [",
+                      sprintf("%.1f", general_data[4, 6] / general_data[3, 6] * 100), 
+                      ", ",
+                      sprintf("%.1f", general_data[4, 7] / general_data[3, 7] * 100),
+                      "]")
+
+
+wmax.sum <- readRDS("./data/derivedData/fitness/wmax.sum.RDS")
+
+
+
+wmax_baseline <- paste0(sprintf("%.0f", wmax.sum[1, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", wmax.sum[1, 3]))
+
+wmax_post <- paste0(sprintf("%.0f", wmax.sum[2, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", wmax.sum[2, 3]),
+                  " watt")
+
+
+
+
+# per
+per_change <- paste0(sprintf("%.1f", general_data[6, 1] / general_data[5, 1] * 100),
+                     "% [",
+                     sprintf("%.1f", general_data[6, 6] / general_data[5, 6] * 100), 
+                     ", ",
+                     sprintf("%.1f", general_data[6, 7] / general_data[5, 7] * 100),
+                     "]")
+
+
+per.sum <- readRDS("./data/derivedData/fitness/per.sum.RDS")
+
+
+
+per_baseline <- paste0(sprintf("%.0f", per.sum[1, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", per.sum[1, 3]))
+
+per_post <- paste0(sprintf("%.0f", per.sum[2, 2]),
+                  " \u00b1 ",
+                  sprintf("%.0f", per.sum[2, 3]),
+                  " watt")
+
+
+
+
+# durability index
+dur_change.conf <- data.frame(confint(dur_change)) |> 
+  mutate(coef = c("",
+                  "",
+                  "intercept",
+                  "timepoint"))
+
+dur_change.dat <- data.frame(summary(dur_change)$coef) |> 
+  mutate(coef = c("intercept",
+                  "timepoint")) |>
+  left_join(dur_change.conf)
+
+
+change_dur <- paste0(sprintf("%.1f", dur_change.dat[2, 1]),
+                     "%-points [",
+                     sprintf("%.1f", dur_change.dat[2, 5]),
+                     ", ",
+                     sprintf("%.1f", dur_change.dat[2, 6]),
+                     "]")
+
+
+dur.sum <- readRDS("./data/derivedData/SR-durability/dur_sum.RDS")
+
+
+pre_dur <- paste0(sprintf("%.1f", dur.sum[1, 2]),
+                  " \u00b1 ",
+                  sprintf("%.1f", dur.sum[1, 3]),
+                  "%-points")
+
+post_dur <- paste0(sprintf("%.1f", dur.sum[2, 2]),
+                  " \u00b1 ",
+                  sprintf("%.1f", dur.sum[2, 3]),
+                  "%-points")
+
+
+
+# n of training session data
+
+nses.data <- readRDS("./data/derivedData/training/nses-data.RDS")
+
+
+nses <- paste0(sprintf("%.1f", nses.data[1, 5]),
+               " \u00b1 ",
+               sprintf("%.1f", nses.data[1, 6]),
+               "%")
+
+
+# ftp data
+
+ftp.model <- readRDS("./data/derivedData/training/ftp_model.RDS")
+ftp.sum <- readRDS("./data/derivedData/training/ftp.sum.RDS")
+
+
+ftp.confint <- confint(ftp.model) |>
+  data.frame() |>
+  mutate(coef = c("",
+                  "",
+                  "1.",
+                  "2.",
+                  "3.",
+                  "4.",
+                  "5."))
+
+ftp.data <- summary(ftp.model)$coef |>
+  data.frame() |>
+  mutate(coef = c("1.",
+                  "2.",
+                  "3.",
+                  "4.",
+                  "5.")) |>
+  left_join(ftp.confint)
+
+
+ftp_baseline <- paste0(sprintf("%.0f", ftp.sum[1, 2]),
+                       " \u00b1 ",
+                       sprintf("%.0f", ftp.sum[1, 3]),
+                       " watt")
+
+
+ftp_post <- paste0(sprintf("%.0f", ftp.sum[5, 2]),
+                       " \u00b1 ",
+                       sprintf("%.0f", ftp.sum[5, 3]),
+                       " watt")
+
+
+
+ftp_change <- paste0(sprintf("%.1f", ftp.data[5, 1]), 
+                     " watt, 95% confidence interval (CI): [",
+                     sprintf("%.1f", ftp.data[5, 5]),
+                     ", ",
+                     sprintf("%.1f", ftp.data[5, 6]),
+                     "]")
+
+
+
+
+
+###### MHC distribution #########
+
+
+type1_m1 <- readRDS("./data/derivedData/mhc_comp/type1_m1.RDS")
+type2a_m1 <- readRDS("./data/derivedData/mhc_comp/type2a_m1.RDS")
+type2x_m1 <- readRDS("./data/derivedData/mhc_comp/type2x_m1.RDS")
+
+
+
+mhc.type_confint <- data.frame(confint(type1_m1)) |>
+  full_join(data.frame(confint(type2a_m1))) |>
+  full_join(data.frame(confint(type2x_m1))) |> 
+  mutate(variable = c(rep("type1", 4),
+                      rep("type2a", 4),
+                      rep("type2x", 4)),
+         coef = rep(c("",
+                      "",
+                      "intercept",
+                      "change"),
+                    3))
+
+mhc.type_data <- data.frame(summary(type1_m1)$coef) |>
+  full_join(data.frame(summary(type2a_m1)$coef)) |>
+  full_join(data.frame(summary(type2x_m1)$coef)) |> 
+  mutate(variable = c(rep("type1", 2),
+                      rep("type2a", 2),
+                      rep("type2x", 2)),
+         coef = rep(c("intercept",
+                      "change"),
+                    3)) |>
+  left_join(mhc.type_confint) |>
+  rename("lower.ci" = "X2.5..",
+         "upper.ci" = "X97.5..")
+
+
+
+type.sum <- readRDS("./data/derivedData/mhc_comp/type.sum.RDS")
+
+
+
+
+# type1
+
+type1_change <- paste0(sprintf("%.1f", mhc.type_data[2, 1]),
+                       "% [",
+                       sprintf("%.1f", mhc.type_data[2, 6]),
+                       ", ",
+                       sprintf("%.1f", mhc.type_data[2, 7]),
+                       "]")
+
+type1_baseline <- paste0(sprintf("%.1f", type.sum[1, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[1, 4]))
+
+type1_post <- paste0(sprintf("%.1f", type.sum[4, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[4, 4]))
+
+
+
+# type2a
+type2a_change <- paste0(sprintf("%.1f", mhc.type_data[4, 1]),
+                       "% [",
+                       sprintf("%.1f", mhc.type_data[4, 6]),
+                       ", ",
+                       sprintf("%.1f", mhc.type_data[4, 7]),
+                       "]")
+
+type2a_baseline <- paste0(sprintf("%.1f", type.sum[2, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[2, 4]))
+
+type2a_post <- paste0(sprintf("%.1f", type.sum[5, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[5, 4]))
+
+
+
+
+
+# type2x
+type2x_change <- paste0(sprintf("%.1f", mhc.type_data[6, 1]),
+                       "% [",
+                       sprintf("%.1f", mhc.type_data[6, 6]),
+                       ", ",
+                       sprintf("%.1f", mhc.type_data[6, 7]),
+                       "]")
+
+
+type2x_baseline <- paste0(sprintf("%.1f", type.sum[3, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[3, 4]))
+
+type2x_post <- paste0(sprintf("%.1f", type.sum[6, 3]),
+                       " \u00b1 ",
+                       sprintf("%.1f", type.sum[6, 4]))
+
+
+
+
+```
+
+All participants sufficiently completed their prescribed endurance training, whereby `r nses` of the training sessions were completed. W~4x5min~ increased by `r ftp_change`, from `r ftp_baseline` at the first 4x5 min session to `r ftp_post` at the last 4x 5min session (Figure 1C). Concomitantly, the 8-week training intervention led to robust increases in cycling performance, an improvement of `r wmax_change` for W~max~ (`r wmax_baseline` to `r wmax_post`) and `r per_change` for W~15min~ (`r per_baseline` to `r per_post`), as well as of `r vo2max_change` in VO~2max~ (`r vo2max_baseline` to `r vo2max_post`), see Figure 3A-C and E). However, the durability index did not change following the training intervention (`r change_dur`; baseline, `r pre_dur`; after training, `r post_dur`; Figure 3D,E).
+
+\newpage
+
+```{r}
+#| fig-cap: "**Figure 3**. A,B,C,D displays baseline and post-test values for W~max~, W~15min~, VO~2max~ and the durability index, respectively. Individual training responses in A, B, C, and D are shown as grey lines and group averages are shown as black points. E) group average percent changes in VO~2max~, W~max~, W~15min~ and the durability index from pre- to post testing. Striped line in E indicates 0. Statistically robust results are presented as orange points (i.e., 95% CI not containing 0). Error lines indicates 95% CI. Abbreviations; VO~2max~, maximal oxygen uptake from the highest 30 second time interval during the incremental cycling test; W~max~,maximal aerobic power measured as the average power output from the last minute of the incremental cycling test; W~15min~, average power output during the 15-minute cycling trial; durability index, the percentage of W~15min~ in regard to W~max~."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+#| fig-width: 6
+#| fig-height: 5
+#| fig-dpi: 600
+#| fig-align: "center"
+
+figure3 <- readRDS("./figures/rds/figure3.RDS")
+
+figure3
+
+```
+
+\newpage
+
+The 8-week endurance training intervention led to robust alterations in the MHC distribution, i.e., the relative distribution of MHC-I was reduced by `r type1_change`; baseline, `r type1_baseline`; after training, `r type1_post` (Figure 4A,D), and the relative distribution of MHC-IIa was increased by `r type2a_change`; baseline, `r type2a_baseline`; after training, `r type2a_post` (Figure 4B,D). However, the relative distribution of MHC-IIx did not change (`r type2x_change`; baseline, `r type2x_baseline`; after training, `r type2x_post`; Figure 4C,D).
+
+```{r}
+#| fig-cap: "**Figure 4**. A,B,C displays the relative distribution of MHC-I, MHC-IIa and MHC-IIx at baseline and post-test, respectively. Individual MHC distribution in A, B, C, and D are shown as grey lines and group averages are shown as black points. D) group average percent changes in MHC-I, MHC-IIa and MHC-IIx from baseline to post testing. Striped line in D indicates 0. Statistically robust results are presented as orange points (i.e., 95% CI not containing 0). Error lines indicates 95% CI. Abbreviations; MHC, myosin heavy chain."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+#| fig-width: 5
+#| fig-height: 5.5
+#| fig-dpi: 600
+#| fig-align: "center"
+
+figure4 <- readRDS("./figures/rds/figure4.RDS")
+
+figure4
+
+```
+
+## Effects of endurance training on SR Ca^2+^ release and uptake
+
+```{r sr-change-data}
+
+# load models
+release_m2 <- readRDS("./data/derivedData/calcium_release/release_m2.RDS")
+tau_m2 <- readRDS("./data/derivedData/calcium_uptake/tau_m2.RDS")
+high_m2 <- readRDS("./data/derivedData/calcium_uptake/high_m2.RDS")
+low_m2 <- readRDS( "./data/derivedData/calcium_uptake/low_m2.RDS")
+leak_m2 <- readRDS("./data/derivedData/calcium_leak/leak_m2.RDS")
+
+# load data
+release_data <- readRDS("./data/derivedData/calcium_release/release_data.RDS")
+tau_data <- readRDS("./data/derivedData/calcium_uptake/tau_data.RDS")
+high_data <- readRDS("./data/derivedData/calcium_uptake/high_data.RDS")
+low_data <- readRDS( "./data/derivedData/calcium_uptake/low_data.RDS")
+leak_data <- readRDS("./data/derivedData/calcium_leak/leak_data.RDS")
+
+
+
+
+## summary stats for Model 2
+
+# release
+re_confint_m2 <- data.frame(confint(release_m2)) |>
+  mutate(coef = c("",
+                  "",
+                  "",
+                  "",
+                  "intercept",
+                  "change",
+                  "sexf"))
+
+
+release_m2_sum <- data.frame(summary(release_m2)$coef) |>
+  mutate(coef = c("intercept",
+                  "change",
+                  "sexf")) |>
+  left_join(re_confint_m2)
+
+
+# uptake
+up_confint_m2 <- data.frame(confint(tau_m2)) |>
+  full_join(data.frame(confint(high_m2))) |>
+  full_join(data.frame(confint(low_m2))) |>
+  mutate(variable = c(rep("tau", 7),
+                      rep("high", 7),
+                      rep("low", 7)),
+         coef = rep(c("",
+                      "",
+                      "",
+                      "",
+                      "intercept",
+                      "change",
+                      "sexf"),
+                    3))
+
+
+up_m2_sum <- data.frame(summary(tau_m2)$coef) |>
+  full_join(data.frame(summary(high_m2)$coef)) |>
+  full_join(data.frame(summary(low_m2)$coef)) |>
+  mutate(variable = c(rep("tau", 3),
+                      rep("high", 3),
+                      rep("low", 3)),
+         coef = rep(c("intercept",
+                      "change",
+                      "sexf"),
+                    3)) |>
+  left_join(up_confint_m2)
+
+
+# leak
+le_confint_m2 <- data.frame(confint(leak_m2)) |>
+  mutate(coef = c("",
+                  "",
+                  "",
+                  "",
+                  "intercept",
+                  "change",
+                  "sexf"))
+
+
+le_m2_sum <- data.frame(summary(leak_m2)$coef) |>
+  mutate(coef = c("intercept",
+                  "change",
+                  "sexf")) |>
+  left_join(le_confint_m2)
+
+
+## save statistics
+
+# release
+re_m2_change <- paste0(sprintf("%.1f", (exp(release_m2_sum[2, 1]) - 1) * 100),
+                       "% [",
+                       sprintf("%.1f", (exp(release_m2_sum[2, 5]) - 1) * 100), 
+                       ", ",
+                       sprintf("%.1f", (exp(release_m2_sum[2, 6]) - 1) * 100),
+                       "]")
+
+re_pre <- paste0(sprintf("%.2f", release_data[1, 5]),
+                 " \u00b1 ",
+                 sprintf("%.2f", release_data[2, 5]))
+
+
+re_post <- paste0(sprintf("%.2f", release_data[3, 5]),
+                  " \u00b1 ",
+                  sprintf("%.2f", release_data[4, 5]))
+
+
+
+
+# uptake
+tau_m2_change <- paste0(sprintf("%.1f", (exp(up_m2_sum[2, 1]) - 1) * 100),
+                        "% [",
+                        sprintf("%.1f", (exp(up_m2_sum[2, 6]) - 1) * 100), 
+                        ", ",
+                        sprintf("%.1f", (exp(up_m2_sum[2, 7]) - 1) * 100),
+                        "]")
+
+
+tau_pre <- paste0(sprintf("%.2f", tau_data[1, 5]),
+                  " \u00b1 ",
+                  sprintf("%.2f", tau_data[2, 5]))
+
+
+tau_post <- paste0(sprintf("%.2f", tau_data[3, 5]),
+                   " \u00b1 ",
+                   sprintf("%.2f", tau_data[4, 5]))
+
+
+
+
+# slope high
+high_m2_change <- paste0(sprintf("%.1f", (exp(up_m2_sum[5, 1]) - 1) * 100),
+                         "% [",
+                         sprintf("%.1f", (exp(up_m2_sum[5, 6]) - 1) * 100), 
+                         ", ",
+                         sprintf("%.1f", (exp(up_m2_sum[5, 7]) - 1) * 100),
+                         "]")
+
+high_pre <- paste0(sprintf("%.2f", high_data[1, 5]),
+                   " \u00b1 ",
+                   sprintf("%.2f", high_data[2, 5]))
+
+
+high_post <- paste0(sprintf("%.2f", high_data[3, 5]),
+                    " \u00b1 ",
+                    sprintf("%.2f", high_data[4, 5]))
+
+
+
+
+
+
+# slope low
+low_m2_change <- paste0(sprintf("%.1f", (exp(up_m2_sum[8, 1]) - 1) * 100),
+                        "% [",
+                        sprintf("%.1f", (exp(up_m2_sum[8, 6]) - 1) * 100), 
+                        ", ",
+                        sprintf("%.1f", (exp(up_m2_sum[8, 7]) - 1) * 100),
+                        "]")
+
+
+
+low_pre <- paste0(sprintf("%.2f", low_data[1, 5]),
+                  " \u00b1 ",
+                  sprintf("%.2f", low_data[2, 5]))
+
+
+low_post <- paste0(sprintf("%.2f", low_data[3, 5]),
+                   " \u00b1 ",
+                   sprintf("%.2f", low_data[4, 5]))
+
+
+
+
+
+# leak
+le_m2_change <- paste0(sprintf("%.1f", (exp(le_m2_sum[2, 1]) - 1) * 100),
+                       "% [",
+                       sprintf("%.1f", (exp(le_m2_sum[2, 5]) - 1) * 100), 
+                       ", ",
+                       sprintf("%.1f", (exp(le_m2_sum[2, 6]) - 1) * 100),
+                       "]")
+
+
+
+leak_pre <- paste0(sprintf("%.1f", leak_data[1, 5]),
+                   " \u00b1 ",
+                   sprintf("%.1f", leak_data[2, 5]))
+
+
+leak_post <- paste0(sprintf("%.1f", leak_data[3, 5]),
+                    " \u00b1 ",
+                    sprintf("%.1f", leak_data[4, 5]))
+
+
+```
+
+The 8-week endurance training intervention led to a robust increase in SR Ca^2+^ release of `r re_m2_change`; baseline, `r re_pre`; after training, `r re_post` $\mu$mol $\cdot$ g protein^-1^ $\cdot$ min^-1^ (Figure 5A,B). In addition, endurance training led to a robust increased in Uptake~tau~ of `r tau_m2_change`; baseline, `r tau_pre`; after training, `r tau_post` s^-1^ $\cdot$ mg protein^-1^ (Figure 5A,B), as well as a robust increase in Uptake~600nM~ of `r high_m2_change`; baseline, `r high_pre`; after training, `r high_post` $\mu$mol $\cdot$ g protein^-1^ $\cdot$ min^-1^ (Figure 5A,B). However, the endurance training intervention did not alter uptake~200nM~ (`r low_m2_change`; baseline, `r low_pre`; after training, `r low_post` $\mu$mol $\cdot$ g protein^-1^ $\cdot$ min^-1^; Figure 5A,B), or SR Ca^2+^ leak rate (`r le_m2_change`; baseline, `r leak_pre`; after training, `r leak_post` nmol $\cdot$ g protein^-1^ $\cdot$ min^-1^; Figure 5A,B).
+
+\newpage
+
+```{r}
+#| fig-cap: "**Fgure 5**. A) individual changes in SR Ca^2+^-handling variables. B) group average changes from baseline to post-training in SR Ca^2+^-handling variables. Striped lines indicates 0. Statistically robust results are presented as orange points (i.e., 95% CI not containing 0). Error lines are 95% CI. Abbreviations: Release rate; SR Ca^2+^ release rate (µmol ∙ g protein^-1^ ∙ min^-1^); Uptake~tau~, half-life (time to decrease by 63%) of [Ca^2+^]~free~ during SR Ca^2+^ uptake (s^-1^ ∙ mg protein^-1^); Uptake~600nM~, rate of SR Ca^2+^ uptake at 600 nM [Ca^2+^]~free~ (µmol ∙ g protein^-1^ ∙ min^-1^); Uptake~200nM~, rate of SR Ca^2+^ uptake at 200 nM [Ca^2+^]~free~ (µmol ∙ g protein^-1^ ∙ min^-1^); Leak rate, rate of SR Ca^2+^ leak (nmol ∙ g protein^-1^ ∙ min^-1^)."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+#| fig-width: 5.5
+#| fig-height: 4.6
+#| fig-dpi: 600
+#| fig-align: "center"
+
+figure5 <- readRDS("./figures/rds/figure5.RDS")
+
+figure5
+
+
+
+```
+
+\newpage 
+
+## Sex differences in SR Ca^2+^ release and uptake
+
+```{r sex-data}
+
+# import models m2 = pooled data and m1 = sex differences
+leak_m1 <- readRDS("./data/derivedData/calcium_leak/leak_m1.RDS")
+tau_m1 <- readRDS("./data/derivedData/calcium_uptake/tau_m1.RDS")
+high_m1 <- readRDS("./data/derivedData/calcium_uptake/high_m1.RDS")
+high_m3 <- readRDS("./data/derivedData/calcium_uptake/high_m3.RDS")
+low_m1 <- readRDS( "./data/derivedData/calcium_uptake/low_m1.RDS")
+release_m1 <- readRDS("./data/derivedData/calcium_release/release_m1.RDS")
+
+# load data
+release_data <- readRDS("./data/derivedData/calcium_release/release_data.RDS")
+tau_data <- readRDS("./data/derivedData/calcium_uptake/tau_data.RDS")
+high_data <- readRDS("./data/derivedData/calcium_uptake/high_data.RDS")
+low_data <- readRDS( "./data/derivedData/calcium_uptake/low_data.RDS")
+leak_data <- readRDS("./data/derivedData/calcium_leak/leak_data.RDS")
+
+
+## summary stats for release model 1
+
+# release
+re_confint_m1 <- data.frame(confint(release_m1)) |>
+  mutate(coef = c("",
+                  "",
+                  "",
+                  "",
+                  "intercept",
+                  "change",
+                  "sexf",
+                  "sexf:change"))
+
+
+release_m1_sum <- data.frame(summary(release_m1)$coef) |>
+  mutate(coef = c("intercept",
+                  "change",
+                  "sexf",
+                  "sexf:change")) |>
+  left_join(re_confint_m1)
+
+
+# uptake
+
+up_confint_m1 <- data.frame(confint(tau_m1)) |>
+  full_join(data.frame(confint(high_m1))) |>
+  full_join(data.frame(confint(low_m1))) |>
+  mutate(variable = c(rep("tau", 8),
+                      rep("high", 8),
+                      rep("low", 8)),
+         coef = rep(c("",
+                      "",
+                      "",
+                      "",
+                      "intercept",
+                      "change",
+                      "sexf",
+                      "sexf:change"),
+                    3))
+
+
+up_m1_sum <- data.frame(summary(tau_m1)$coef) |>
+  full_join(data.frame(summary(high_m1)$coef)) |>
+  full_join(data.frame(summary(low_m1)$coef)) |>
+  mutate(variable = c(rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4)),
+         coef = rep(c("intercept",
+                      "change",
+                      "sexf",
+                      "sexf:change"),
+                    3)) |>
+  left_join(up_confint_m1)
+
+
+
+
+
+# effect og mhc on slope.high #####################################
+high_confint_m3 <- data.frame(confint(high_m3)) |> 
+  mutate(coef = c("",
+                  "",
+                  "",
+                  "",
+                  "intercept",
+                  "change",
+                  "sexf",
+                  "mhc",
+                  "sexf:change"))
+
+
+high_m3_sum <- data.frame(summary(high_m3)$coef) |>
+  mutate(coef = c("intercept",
+                  "change",
+                  "sexf",
+                  "mhc",
+                  "sexf:change")) |>
+  left_join(high_confint_m3)
+
+
+high.mhc.sex <- paste0(sprintf("%.1f", (exp(high_m3_sum[3, 1]) - 1) * 100),
+                    "% [",
+                    sprintf("%.1f", (exp(high_m3_sum[3, 5]) - 1) * 100), 
+                    ", ",
+                    sprintf("%.1f", (exp(high_m3_sum[3, 6]) - 1) * 100),
+                    "]")
+
+high.mhc.sex_change <- paste0(sprintf("%.1f", (exp(high_m3_sum[5, 1]) - 1) * 100),
+                    "% [",
+                    sprintf("%.1f", (exp(high_m3_sum[5, 5]) - 1) * 100), 
+                    ", ",
+                    sprintf("%.1f", (exp(high_m3_sum[5, 6]) - 1) * 100),
+                    "]")
+#################################################################
+
+
+
+
+# leak
+
+le_confint_m1 <- data.frame(confint(leak_m1)) |>
+  mutate(coef = c("",
+                  "",
+                  "",
+                  "",
+                  "intercept",
+                  "change",
+                  "sexf",
+                  "sexf:change"))
+
+
+le_m1_sum <- data.frame(summary(leak_m1)$coef) |>
+  mutate(coef = c("intercept",
+                  "change",
+                  "sexf",
+                  "sexf:change")) |>
+  left_join(le_confint_m1)
+
+
+
+# save statistics
+
+
+le_m1_sex <- paste0(sprintf("%.1f", (exp(le_m1_sum[3, 1]) - 1) * 100),
+                    "% [",
+                    sprintf("%.1f", (exp(le_m1_sum[3, 5]) - 1) * 100), 
+                    ", ",
+                    sprintf("%.1f", (exp(le_m1_sum[3, 6]) - 1) * 100),
+                    "]")
+
+le_m_pre <- paste0(sprintf("%.1f", leak_data[1, 3]),
+                   " \u00b1 ",
+                   sprintf("%.1f", leak_data[2, 3]))
+
+le_m_post <- paste0(sprintf("%.1f", leak_data[3, 3]),
+                    " \u00b1 ",
+                    sprintf("%.1f", leak_data[4, 3]))
+
+
+le_f_pre <- paste0(sprintf("%.1f", leak_data[1, 4]),
+                   " \u00b1 ",
+                   sprintf("%.1f", leak_data[2, 4]))
+
+le_f_post <- paste0(sprintf("%.1f", leak_data[3, 4]),
+                    " \u00b1 ",
+                    sprintf("%.1f", leak_data[4, 4]))
+
+
+
+
+
+tau_m1_sex <- paste0(sprintf("%.1f", (exp(up_m1_sum[3, 1]) - 1) * 100),
+                     "% [",
+                     sprintf("%.1f", (exp(up_m1_sum[3, 6]) - 1) * 100), 
+                     ", ",
+                     sprintf("%.1f", (exp(up_m1_sum[3, 7]) - 1) * 100),
+                     "]")
+
+tau_m_pre <- paste0(sprintf("%.2f", tau_data[1, 3]),
+                    " \u00b1 ",
+                    sprintf("%.2f", tau_data[2, 3]))
+
+tau_m_post <- paste0(sprintf("%.2f", tau_data[3, 3]),
+                     " \u00b1 ",
+                     sprintf("%.2f", tau_data[4, 3]))
+
+
+tau_f_pre <- paste0(sprintf("%.2f", tau_data[1, 4]),
+                    " \u00b1 ",
+                    sprintf("%.2f", tau_data[2, 4]))
+
+tau_f_post <- paste0(sprintf("%.2f", tau_data[3, 4]),
+                     " \u00b1 ",
+                     sprintf("%.2f", tau_data[4, 4]))
+
+
+
+
+
+
+high_m1_sex <- paste0(sprintf("%.1f", (exp(up_m1_sum[7, 1]) - 1) * 100),
+                      "% [",
+                      sprintf("%.1f", (exp(up_m1_sum[7, 6]) - 1) * 100), 
+                      ", ",
+                      sprintf("%.1f", (exp(up_m1_sum[7, 7]) - 1) * 100),
+                      "]")
+
+
+high_m_pre <- paste0(sprintf("%.2f", high_data[1, 3]),
+                     " \u00b1 ",
+                     sprintf("%.2f", high_data[2, 3]))
+
+high_m_post <- paste0(sprintf("%.2f", high_data[3, 3]),
+                      " \u00b1 ",
+                      sprintf("%.2f", high_data[4, 3]))
+
+
+high_f_pre <- paste0(sprintf("%.2f", high_data[1, 4]),
+                     " \u00b1 ",
+                     sprintf("%.2f", high_data[2, 4]))
+
+high_f_post <- paste0(sprintf("%.2f", high_data[3, 4]),
+                      " \u00b1 ",
+                      sprintf("%.2f", high_data[4, 4]))
+
+
+
+
+
+low_m1_sex <- paste0(sprintf("%.1f", (exp(up_m1_sum[11, 1]) - 1) * 100),
+                     "% [",
+                     sprintf("%.1f", (exp(up_m1_sum[11, 6]) - 1) * 100), 
+                     ", ",
+                     sprintf("%.1f", (exp(up_m1_sum[11, 7]) - 1) * 100),
+                     "]")
+
+low_m_pre <- paste0(sprintf("%.2f", low_data[1, 3]),
+                    " \u00b1 ",
+                    sprintf("%.2f", low_data[2, 3]))
+
+low_m_post <- paste0(sprintf("%.2f", low_data[3, 3]),
+                     " \u00b1 ",
+                     sprintf("%.2f", low_data[4, 3]))
+
+
+low_f_pre <- paste0(sprintf("%.2f", low_data[1, 4]),
+                    " \u00b1 ",
+                    sprintf("%.2f", low_data[2, 4]))
+
+low_f_post <- paste0(sprintf("%.2f", low_data[3, 4]),
+                     " \u00b1 ",
+                     sprintf("%.2f", low_data[4, 4]))
+
+
+
+
+re_m1_sex <- paste0(sprintf("%.1f", (exp(release_m1_sum[3, 1]) - 1) * 100),
+                   "% [",
+                   sprintf("%.1f", (exp(release_m1_sum[3, 5]) - 1) * 100), 
+                   ", ",
+                   sprintf("%.1f", (exp(release_m1_sum[3, 6]) - 1) * 100),
+                   "]")
+
+re_m_pre <- paste0(sprintf("%.2f", release_data[1, 3]),
+                   " \u00b1 ",
+                   sprintf("%.2f", release_data[2, 3]))
+
+re_m_post <- paste0(sprintf("%.2f", release_data[3, 3]),
+                    " \u00b1 ",
+                    sprintf("%.2f", release_data[4, 3]))
+
+
+re_f_pre <- paste0(sprintf("%.2f", release_data[1, 4]),
+                   " \u00b1 ",
+                   sprintf("%.2f", release_data[2, 4]))
+
+re_f_post <- paste0(sprintf("%.2f", release_data[3, 4]),
+                    " \u00b1 ",
+                    sprintf("%.2f", release_data[4, 4]))
+
+
+
+
+le_m1_sex_change <- paste0(sprintf("%.1f", (exp(le_m1_sum[4, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(le_m1_sum[4, 5]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(le_m1_sum[4, 6]) - 1) * 100),
+                           "]")
+
+
+tau_m1_sex_change <- paste0(sprintf("%.1f", (exp(up_m1_sum[4, 1]) - 1) * 100),
+                            "% [",
+                            sprintf("%.1f", (exp(up_m1_sum[4, 6]) - 1) * 100), 
+                            ", ",
+                            sprintf("%.1f", (exp(up_m1_sum[4, 7]) - 1) * 100),
+                            "]")
+
+
+high_m1_sex_change <- paste0(sprintf("%.1f", (exp(up_m1_sum[8, 1]) - 1) * 100),
+                             "% [",
+                             sprintf("%.1f", (exp(up_m1_sum[8, 6]) - 1) * 100), 
+                             ", ",
+                             sprintf("%.1f", (exp(up_m1_sum[8, 7]) - 1) * 100),
+                             "]")
+
+
+
+low_m1_sex_change <- paste0(sprintf("%.1f", (exp(up_m1_sum[12, 1]) - 1) * 100),
+                            "% [",
+                            sprintf("%.1f", (exp(up_m1_sum[12, 6]) - 1) * 100), 
+                            ", ",
+                            sprintf("%.1f", (exp(up_m1_sum[12, 7]) - 1) * 100),
+                            "]")
+
+
+
+
+re_m1_sex_change <- paste0(sprintf("%.1f", (exp(release_m1_sum[4, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(release_m1_sum[4, 5]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(release_m1_sum[4, 6]) - 1) * 100),
+                           "]")
+
+```
+
+Uptake~600nM~ was `r high_m1_sex` lower in females compared to males at baseline (males, `r high_m_pre`; females, `r high_f_pre` $\mu$mol ∙ g protein^-1^ ∙ min^-1^; Figure 6A), however, females increased `r high_m1_sex_change` more than males from baseline to after training (Figure 5B). The robustness of the sex interaction observed in uptake~600nM~ at baseline and in response to training was not altered by accounting for the relative proportion of MHC-II at baseline (`r high.mhc.sex`) or change from baseline to after training (`r high.mhc.sex_change`), in females compared to males respectively. However, neither uptake~tau~ or uptake~200nM~ were different between sexes at baseline (`r tau_m1_sex` and `r low_m1_sex`, respectively; Figure 6A) or in change from baseline to after training (`r tau_m1_sex_change` and `r low_m1_sex_change`, respectively; Figure 6B). Moreover, SR Ca^2+^ release did not differ between sexes at baseline (`r re_m1_sex`; males, `r re_m_pre`;  females, `r re_f_pre` $\mu$mol ∙ gr protein^-1^ ∙ min^-1^; Figure 6A) or in change from baseline to after training (`r re_m1_sex_change`; Figure 6B). In addition, uptake~200nM~ did not differ between sexes at baseline (`r low_m1_sex`; males, `r low_m_pre`; females, `r low_f_pre` $\mu$mol ∙ g protein^-1^ ∙ min^-1^; Figure 6A) or in change from baseline to after training `r low_m1_sex_change` (Figure 6B).
+
+```{r}
+#| fig-cap: "**Figure 6**. A) difference in SR Ca^2+^-handling between sexes at baseline. B) difference between sexes in SR Ca^2+^-handling training effect. Striped lines indicates 0. Statistically robust results are presented as orange points (i.e., 95% CI not containing 0). Error lines are 95% CI. Abbreviations: Release rate; SR Ca^2+^ release (µmol ∙ g protein ∙ min^-1^); Uptake~tau~, half-life (time to decrease by 63%) of [Ca^2+^]~free~ during SR Ca^2+^ uptake (s^-1^ ∙ mg protein^-1^); Uptake~600nM~, rate of SR Ca^2+^ uptake at 600 nM [Ca^2+^]~free~ (µmol ∙ g protein^-1^ ∙ min^-1^); Uptake~200nM~, rate of SR Ca^2+^ uptake at 200 nM [Ca^2+^]~free~ (µmol ∙ g protein^-1^ ∙ min^-1^); Leak rate, rate of SR Ca^2+^ leak (nmol ∙ g protein^-1^ ∙ min^-1^)."
+#| fig-subcap: ""
+#| fig-cap-location: bottom
+#| fig-width: 5.5
+#| fig-height: 3.5
+#| fig-dpi: 600
+#| fig-align: "center"
+
+figure6 <- readRDS("./figures/rds/figure6.RDS")
+
+figure6
+
+
+
+```
+
+## SR Ca^2+^ release and uptake in relation to cycling performance, VO~2max~ and durability
+
+```{r}
+
+dur_high <- readRDS("./data/derivedData/SR-durability/durability_high.RDS")
+dur_leak <- readRDS("./data/derivedData/SR-durability/durability_leak.RDS")
+dur_low <- readRDS("./data/derivedData/SR-durability/durability_low.low.RDS")
+dur_re <- readRDS("./data/derivedData/SR-durability/durability_re.RDS")
+dur_tau <- readRDS("./data/derivedData/SR-durability/durability_tau.RDS")
+dur_high.pre <- readRDS("./data/derivedData/SR-durability/dur_high.pre.RDS")
+dur_leak.pre <- readRDS("./data/derivedData/SR-durability/dur_leak.pre.RDS")
+dur_low.pre <- readRDS("./data/derivedData/SR-durability/dur_low.pre.RDS")
+dur_re.pre <- readRDS("./data/derivedData/SR-durability/dur_release.pre.RDS")
+dur_tau.pre <- readRDS("./data/derivedData/SR-durability/dur_tau.pre.RDS")
+
+
+per_high <- readRDS("./data/derivedData/SR-performance/per_high.RDS")
+per_leak <- readRDS("./data/derivedData/SR-performance/per_leak.RDS")
+per_low <- readRDS("./data/derivedData/SR-performance/per_low.RDS")
+per_re <- readRDS("./data/derivedData/SR-performance/per_release.RDS")
+per_tau <- readRDS("./data/derivedData/SR-performance/per_tau.RDS")
+per_high.pre <- readRDS("./data/derivedData/SR-performance/per_high.pre.RDS")
+per_leak.pre <- readRDS("./data/derivedData/SR-performance/per_leak.pre.RDS")
+per_low.pre <- readRDS("./data/derivedData/SR-performance/per_low.pre.RDS")
+per_re.pre <- readRDS("./data/derivedData/SR-performance/per_release.pre.RDS")
+per_tau.pre <- readRDS("./data/derivedData/SR-performance/per_tau.pre.RDS")
+
+
+vo2max_high <- readRDS("./data/derivedData/SR-vo2max/vo2max_high.RDS")
+vo2max_leak <- readRDS("./data/derivedData/SR-vo2max/vo2max_leak.RDS")
+vo2max_low <- readRDS("./data/derivedData/SR-vo2max/vo2max_low.RDS")
+vo2max_re <- readRDS("./data/derivedData/SR-vo2max/vo2max_release.RDS")
+vo2max_tau <- readRDS("./data/derivedData/SR-vo2max/vo2max_tau.RDS")
+vo2max_high.pre <- readRDS("./data/derivedData/SR-vo2max/vo2max_high.pre.RDS")
+vo2max_leak.pre <- readRDS("./data/derivedData/SR-vo2max/vo2max_leak.pre.RDS")
+vo2max_low.pre <- readRDS("./data/derivedData/SR-vo2max/vo2max_low.pre.RDS")
+vo2max_re.pre <- readRDS("./data/derivedData/SR-vo2max/vo2max_release.pre.RDS")
+vo2max_tau.pre <- readRDS("./data/derivedData/SR-vo2max/vo2max_tau.pre.RDS")
+
+
+
+wmax_high <- readRDS("./data/derivedData/SR-wmax/wmax_high.RDS")
+wmax_leak <- readRDS("./data/derivedData/SR-wmax/wmax_leak.RDS")
+wmax_low <- readRDS("./data/derivedData/SR-wmax/wmax_low.RDS")
+wmax_re <- readRDS("./data/derivedData/SR-wmax/wmax_release.RDS")
+wmax_tau <- readRDS("./data/derivedData/SR-wmax/wmax_tau.RDS")
+wmax_high.pre <- readRDS("./data/derivedData/SR-wmax/wmax_high.pre.RDS")
+wmax_leak.pre <- readRDS("./data/derivedData/SR-wmax/wmax_leak.pre.RDS")
+wmax_low.pre <- readRDS("./data/derivedData/SR-wmax/wmax_low.pre.RDS")
+wmax_re.pre <- readRDS("./data/derivedData/SR-wmax/wmax_release.pre.RDS")
+wmax_tau.pre <- readRDS("./data/derivedData/SR-wmax/wmax_tau.pre.RDS")
+
+
+###########
+
+pre_confint <- data.frame(confint(dur_re.pre)) |>
+  full_join(data.frame(confint(dur_tau.pre))) |>
+  full_join(data.frame(confint(dur_high.pre))) |>
+  full_join(data.frame(confint(dur_low.pre))) |>
+  full_join(data.frame(confint(dur_leak.pre))) |>
+  full_join(data.frame(confint(per_re.pre))) |>
+  full_join(data.frame(confint(per_tau.pre))) |>
+  full_join(data.frame(confint(per_high.pre))) |>
+  full_join(data.frame(confint(per_low.pre))) |>
+  full_join(data.frame(confint(per_leak.pre))) |>
+  full_join(data.frame(confint(wmax_re.pre))) |>
+  full_join(data.frame(confint(wmax_tau.pre))) |>
+  full_join(data.frame(confint(wmax_high.pre))) |>
+  full_join(data.frame(confint(wmax_low.pre))) |>
+  full_join(data.frame(confint(wmax_leak.pre))) |>
+  full_join(data.frame(confint(vo2max_re.pre))) |>
+  full_join(data.frame(confint(vo2max_tau.pre))) |>
+  full_join(data.frame(confint(vo2max_high.pre))) |>
+  full_join(data.frame(confint(vo2max_low.pre))) |>
+  full_join(data.frame(confint(vo2max_leak.pre))) |> 
+  mutate(variable = rep(c(rep("re", 3),
+                      rep("tau", 3),
+                      rep("high", 3),
+                      rep("low", 3),
+                      rep("leak", 3)),
+                      4),
+         coef = rep(rep(c("intercept",
+                      "pre",
+                      "sex"),
+                    5), 4),
+         type = c(rep("durability", 15),
+                  rep("performance", 15),
+                  rep("wmax", 15),
+                  rep("vo2max", 15)))
+
+
+pre_adjusted <- data.frame(adj.r = summary(dur_re.pre)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(dur_tau.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_high.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_low.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_leak.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_re.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_tau.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_high.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_low.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_leak.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_re.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_tau.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_high.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_low.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_leak.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_re.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_tau.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_high.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_low.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_leak.pre)$adj.r.squared)) |>
+  mutate(variable = rep(c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"),
+                      4),
+         type = c(rep("durability", 5),
+                  rep("performance", 5),
+                  rep("wmax", 5),
+                  rep("vo2max", 5)))
+
+
+
+
+pre_data <- data.frame(summary(dur_re.pre)$coef) |>
+  full_join(data.frame(summary(dur_tau.pre)$coef)) |>
+  full_join(data.frame(summary(dur_high.pre)$coef)) |>
+  full_join(data.frame(summary(dur_low.pre)$coef)) |>
+  full_join(data.frame(summary(dur_leak.pre)$coef)) |>
+  full_join(data.frame(summary(per_re.pre)$coef)) |>
+  full_join(data.frame(summary(per_tau.pre)$coef)) |>
+  full_join(data.frame(summary(per_high.pre)$coef)) |>
+  full_join(data.frame(summary(per_low.pre)$coef)) |>
+  full_join(data.frame(summary(per_leak.pre)$coef)) |>
+  full_join(data.frame(summary(wmax_re.pre)$coef)) |>
+  full_join(data.frame(summary(wmax_tau.pre)$coef)) |>
+  full_join(data.frame(summary(wmax_high.pre)$coef)) |>
+  full_join(data.frame(summary(wmax_low.pre)$coef)) |>
+  full_join(data.frame(summary(wmax_leak.pre)$coef)) |>
+  full_join(data.frame(summary(vo2max_re.pre)$coef)) |>
+  full_join(data.frame(summary(vo2max_tau.pre)$coef)) |>
+  full_join(data.frame(summary(vo2max_high.pre)$coef)) |>
+  full_join(data.frame(summary(vo2max_low.pre)$coef)) |>
+  full_join(data.frame(summary(vo2max_leak.pre)$coef)) |>
+  mutate(variable = rep(c(rep("re", 3),
+                      rep("tau", 3),
+                      rep("high", 3),
+                      rep("low", 3),
+                      rep("leak", 3)),
+                      4),
+         coef = rep(rep(c("intercept",
+                      "pre",
+                      "sex"),
+                    5), 4),
+         type = c(rep("durability", 15),
+                  rep("performance", 15),
+                  rep("wmax", 15),
+                  rep("vo2max", 15))) |>
+  filter(coef == "pre") |>
+  left_join(pre_confint) |>
+  left_join(pre_adjusted)
+
+################################
+
+
+
+dur_confint <- data.frame(confint(dur_re)) |>
+  full_join(data.frame(confint(dur_tau))) |>
+  full_join(data.frame(confint(dur_high))) |>
+  full_join(data.frame(confint(dur_low))) |>
+  full_join(data.frame(confint(dur_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "dur",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+
+dur_adjusted <- data.frame(adj.r = summary(dur_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(dur_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(dur_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+dur_data <- data.frame(summary(dur_re)$coef) |>
+  full_join(data.frame(summary(dur_tau)$coef)) |>
+  full_join(data.frame(summary(dur_high)$coef)) |>
+  full_join(data.frame(summary(dur_low)$coef)) |>
+  full_join(data.frame(summary(dur_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "dur",
+                      "pre_slope",
+                      "sex"),
+                    5)) |>
+  filter(coef == "dur") |>
+  left_join(dur_confint) |>
+  left_join(dur_adjusted)
+
+
+
+
+per_confint <- data.frame(confint(per_re)) |>
+  full_join(data.frame(confint(per_tau))) |>
+  full_join(data.frame(confint(per_high))) |>
+  full_join(data.frame(confint(per_low))) |>
+  full_join(data.frame(confint(per_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "per",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+
+
+per_adjusted <- data.frame(adj.r = summary(per_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(per_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(per_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+per_data <- data.frame(summary(per_re)$coef) |>
+  full_join(data.frame(summary(per_tau)$coef)) |>
+  full_join(data.frame(summary(per_high)$coef)) |>
+  full_join(data.frame(summary(per_low)$coef)) |>
+  full_join(data.frame(summary(per_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "per",
+                      "pre_slope",
+                      "sex"),
+                    5)) |>
+  filter(coef == "per") |>
+  left_join(per_confint) |>
+  left_join(per_adjusted)
+
+
+
+
+wmax_confint <- data.frame(confint(wmax_re)) |>
+  full_join(data.frame(confint(wmax_tau))) |>
+  full_join(data.frame(confint(wmax_high))) |>
+  full_join(data.frame(confint(wmax_low))) |>
+  full_join(data.frame(confint(wmax_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "wmax",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+
+
+wmax_adjusted <- data.frame(adj.r = summary(wmax_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(wmax_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(wmax_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+
+wmax_data <- data.frame(summary(wmax_re)$coef) |>
+  full_join(data.frame(summary(wmax_tau)$coef)) |>
+  full_join(data.frame(summary(wmax_high)$coef)) |>
+  full_join(data.frame(summary(wmax_low)$coef)) |>
+  full_join(data.frame(summary(wmax_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "wmax",
+                      "pre_slope",
+                      "sex"),
+                    5)) |>
+  filter(coef == "wmax") |>
+  left_join(wmax_confint) |>
+  left_join(wmax_adjusted)
+
+
+
+
+vo2max_confint <- data.frame(confint(vo2max_re)) |>
+  full_join(data.frame(confint(vo2max_tau))) |>
+  full_join(data.frame(confint(vo2max_high))) |>
+  full_join(data.frame(confint(vo2max_low))) |>
+  full_join(data.frame(confint(vo2max_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "vo2max",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+
+
+vo2max_adjusted <- data.frame(adj.r = summary(vo2max_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(vo2max_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(vo2max_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+vo2max_data <- data.frame(summary(vo2max_re)$coef) |>
+  full_join(data.frame(summary(vo2max_tau)$coef)) |>
+  full_join(data.frame(summary(vo2max_high)$coef)) |>
+  full_join(data.frame(summary(vo2max_low)$coef)) |>
+  full_join(data.frame(summary(vo2max_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "vo2max",
+                      "pre_slope",
+                      "sex"),
+                    5)) |>
+  filter(coef == "vo2max") |>
+  left_join(vo2max_confint) |>
+  left_join(vo2max_adjusted)
+
+
+
+
+
+
+
+# durability
+
+
+re_dur <- paste0(sprintf("%.2f", dur_data[1, 1]),
+                         "% [",
+                         sprintf("%.2f", dur_data[1, 7]), 
+                         ", ",
+                         sprintf("%.2f", dur_data[1, 8]),
+                         "] R\U00B2\U2090 = ",
+                         sprintf("%.2f", dur_data[1, 9]))
+
+
+tau_dur <- paste0(sprintf("%.2f", dur_data[2, 1]),
+                          "% [",
+                          sprintf("%.2f", dur_data[2, 7]), 
+                          ", ",
+                          sprintf("%.2f", dur_data[2, 8]),
+                          "] R\U00B2\U2090 = ",
+                          sprintf("%.2f", dur_data[2, 9]))
+
+
+high_dur <- paste0(sprintf("%.2f", dur_data[3, 1]),
+                           "% [",
+                           sprintf("%.2f", dur_data[3, 7]), 
+                           ", ",
+                           sprintf("%.2f", dur_data[3, 8]),
+                           "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", dur_data[3, 9]))
+
+
+low_dur <- paste0(sprintf("%.2f", dur_data[4, 1]),
+                          "% [",
+                          sprintf("%.2f", dur_data[4, 7]), 
+                          ", ",
+                          sprintf("%.2f", dur_data[4, 8]),
+                          "] R\U00B2\U2090 = ",
+                          sprintf("%.2f", dur_data[4, 9]))
+
+
+leak_dur <- paste0(sprintf("%.2f", dur_data[5, 1]),
+                           "% [",
+                           sprintf("%.2f", dur_data[5, 7]), 
+                           ", ",
+                           sprintf("%.2f", dur_data[5, 8]),
+                           "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", dur_data[5, 9]))
+
+
+
+re_dur.pre <- paste0(sprintf("%.2f", pre_data[1, 1]),
+                     "%-points [",
+                     sprintf("%.2f", pre_data[1, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[1, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[1, 10]))
+
+
+tau_dur.pre <- paste0(sprintf("%.2f", pre_data[2, 1]),
+                     "%-points [",
+                     sprintf("%.2f", pre_data[2, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[2, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[2, 10]))
+
+high_dur.pre <- paste0(sprintf("%.2f", pre_data[3, 1]),
+                     "%-points [",
+                     sprintf("%.2f", pre_data[3, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[3, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[3, 10]))
+
+low_dur.pre <- paste0(sprintf("%.2f", pre_data[4, 1]),
+                     "%-points [",
+                     sprintf("%.2f", pre_data[4, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[4, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[4, 10]))
+
+leak_dur.pre <- paste0(sprintf("%.2f", pre_data[5, 1]),
+                     "%-points [",
+                     sprintf("%.2f", pre_data[5, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[5, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[5, 10]))
+
+
+
+# performance
+
+
+re_per <- paste0(sprintf("%.2f", per_data[1, 1]),
+                         " watt [",
+                         sprintf("%.2f", per_data[1, 7]), 
+                         ", ",
+                         sprintf("%.2f", per_data[1, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", per_data[1, 9]))
+
+
+tau_per <- paste0(sprintf("%.2f", per_data[2, 1]),
+                         " watt [",
+                         sprintf("%.2f", per_data[2, 7]), 
+                         ", ",
+                         sprintf("%.2f", per_data[2, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", per_data[2, 9]))
+
+
+high_per <- paste0(sprintf("%.2f", per_data[3, 1]),
+                         " watt [",
+                         sprintf("%.2f", per_data[3, 7]), 
+                         ", ",
+                         sprintf("%.2f", per_data[3, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", per_data[3, 9]))
+
+
+low_per <- paste0(sprintf("%.2f", per_data[4, 1]),
+                         " watt [",
+                         sprintf("%.2f", per_data[4, 7]), 
+                         ", ",
+                         sprintf("%.2f", per_data[4, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", per_data[4, 9]))
+
+
+leak_per <- paste0(sprintf("%.2f", per_data[5, 1]),
+                         " watt [",
+                         sprintf("%.2f", per_data[5, 7]), 
+                         ", ",
+                         sprintf("%.2f", per_data[5, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", per_data[5, 9]))
+
+
+re_per.pre <- paste0(sprintf("%.3f", pre_data[6, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[6, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[6, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[6, 10]))
+
+
+tau_per.pre <- paste0(sprintf("%.3f", pre_data[7, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[7, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[7, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[7, 10]))
+
+high_per.pre <- paste0(sprintf("%.3f", pre_data[8, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[8, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[8, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[8, 10]))
+
+low_per.pre <- paste0(sprintf("%.3f", pre_data[9, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[9, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[9, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[9, 10]))
+
+leak_per.pre <- paste0(sprintf("%.3f", pre_data[10, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[10, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[10, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[10, 10]))
+
+
+
+
+# wmax
+
+
+re_wmax <- paste0(sprintf("%.2f", wmax_data[1, 1]),
+                         " watt [",
+                         sprintf("%.2f", wmax_data[1, 7]), 
+                         ", ",
+                         sprintf("%.2f", wmax_data[1, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", wmax_data[1, 9]))
+
+
+tau_wmax <- paste0(sprintf("%.2f", wmax_data[2, 1]),
+                         " watt [",
+                         sprintf("%.2f", wmax_data[2, 7]), 
+                         ", ",
+                         sprintf("%.2f", wmax_data[2, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", wmax_data[2, 9]))
+
+
+high_wmax <- paste0(sprintf("%.2f", wmax_data[3, 1]),
+                         " watt [",
+                         sprintf("%.2f", wmax_data[3, 7]), 
+                         ", ",
+                         sprintf("%.2f", wmax_data[3, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", wmax_data[3, 9]))
+
+
+low_wmax <- paste0(sprintf("%.2f", wmax_data[4, 1]),
+                         " watt [",
+                         sprintf("%.2f", wmax_data[4, 7]), 
+                         ", ",
+                         sprintf("%.2f", wmax_data[4, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", wmax_data[4, 9]))
+
+
+leak_wmax <- paste0(sprintf("%.2f", wmax_data[5, 1]),
+                         " watt [",
+                         sprintf("%.2f", wmax_data[5, 7]), 
+                         ", ",
+                         sprintf("%.2f", wmax_data[5, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", wmax_data[5, 9]))
+
+
+
+re_wmax.pre <- paste0(sprintf("%.3f", pre_data[11, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[11, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[11, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[11, 10]))
+
+
+tau_wmax.pre <- paste0(sprintf("%.3f", pre_data[12, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[12, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[12, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[12, 10]))
+
+high_wmax.pre <- paste0(sprintf("%.3f", pre_data[13, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[13, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[13, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[13, 10]))
+
+low_wmax.pre <- paste0(sprintf("%.3f", pre_data[14, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[14, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[14, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[14, 10]))
+
+leak_wmax.pre <- paste0(sprintf("%.3f", pre_data[15, 1]),
+                     " watt \U00B7 kg\U207B\U00B9 [",
+                     sprintf("%.3f", pre_data[15, 8]),
+                     ", ",
+                     sprintf("%.3f", pre_data[15, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[15, 10]))
+
+
+
+
+
+# vo2max
+
+
+re_vo2max <- paste0(sprintf("%.2f", vo2max_data[1, 1]),
+                         " mL \U00B7 min\U207B\U00B9 [",
+                         sprintf("%.2f", vo2max_data[1, 7]), 
+                         ", ",
+                         sprintf("%.2f", vo2max_data[1, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", vo2max_data[1, 9]))
+
+
+tau_vo2max <- paste0(sprintf("%.2f", vo2max_data[2, 1]),
+                         " mL \U00B7 min\U207B\U00B9 [",
+                         sprintf("%.2f", vo2max_data[2, 7]), 
+                         ", ",
+                         sprintf("%.2f", vo2max_data[2, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", vo2max_data[2, 9]))
+
+
+high_vo2max <- paste0(sprintf("%.2f", vo2max_data[3, 1]),
+                         " mL \U00B7 min\U207B\U00B9 [",
+                         sprintf("%.2f", vo2max_data[3, 7]), 
+                         ", ",
+                         sprintf("%.2f", vo2max_data[3, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", vo2max_data[3, 9]))
+
+
+low_vo2max <- paste0(sprintf("%.2f", vo2max_data[4, 1]),
+                         " mL \U00B7 min\U207B\U00B9 [",
+                         sprintf("%.2f", vo2max_data[4, 7]), 
+                         ", ",
+                         sprintf("%.2f", vo2max_data[4, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", vo2max_data[4, 9]))
+
+
+leak_vo2max <- paste0(sprintf("%.2f", vo2max_data[5, 1]),
+                         " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                         sprintf("%.2f", vo2max_data[5, 7]), 
+                         ", ",
+                         sprintf("%.2f", vo2max_data[5, 8]),
+                         "] R\U00B2\U2090 = ",
+                           sprintf("%.2f", vo2max_data[5, 9]))
+
+
+re_vo2max.pre <- paste0(sprintf("%.2f", pre_data[16, 1]),
+                     " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", pre_data[16, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[16, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[16, 10]))
+
+
+tau_vo2max.pre <- paste0(sprintf("%.2f", pre_data[17, 1]),
+                     " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", pre_data[17, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[17, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[17, 10]))
+
+high_vo2max.pre <- paste0(sprintf("%.2f", pre_data[18, 1]),
+                     " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", pre_data[18, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[18, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[18, 10]))
+
+low_vo2max.pre <- paste0(sprintf("%.2f", pre_data[19, 1]),
+                     " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", pre_data[19, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[19, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[19, 10]))
+
+leak_vo2max.pre <- paste0(sprintf("%.2f", pre_data[20, 1]),
+                     " mL \U00B7 kg\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", pre_data[20, 8]),
+                     ", ",
+                     sprintf("%.2f", pre_data[20, 9]),
+                     "] R\U00B2\U2090 = ",
+                     sprintf("%.2f", pre_data[20, 10]))
+
+
+```
+
+
+There was a robust inverse relationship between training response in uptake~tau~ and training responses in W~15min~ and W~max~, with one percent increase in uptake~tau~ coinciding with `r tau_per` lower training response in W~15min~ and `r tau_wmax` lower training response in W~max~ (Table 3). No other relationships where found between training responses in SR Ca^2+^ handling variables and training responses in W~15min~, W~max~, VO~2max~ or durability index (Table 3).
+
+
+```{r}
+
+
+table.3 <- per_data |> 
+  full_join(wmax_data) |>
+  full_join(vo2max_data) |>
+  full_join(dur_data) |>
+  select("Variable" = variable,
+         Estimate,
+         "Standard..Error" = Std..Error,
+         "Lower 95% CI" = `X2.5..`,
+         "Upper 95% CI" = `X97.5..`,
+         adj.r,
+         coef) |>
+  mutate(Variable = factor(Variable,
+                           levels = c("re",
+                                      "tau",
+                                      "high",
+                                      "low",
+                                      "leak"),
+                           labels = c("Release rate",
+                                      "Uptake_tau",
+                                      "Uptake_600nM",
+                                      "Uptake_200nM",
+                                      "Leak rate")),
+         coef = factor(coef,
+                       levels = c("per",
+                                  "wmax",
+                                  "vo2max",
+                                  "dur"),
+                       labels = c("Change in power output during 15min cycling trial",
+                                  "Change in power output of the last minute during incremental cycling test",
+                                  "Change in maximal oxygen consumption",
+                                  "Change in durability index"))) |>
+  gt(groupname_col = "coef") |>
+  fmt_number(decimals = 2) |>
+  cols_align(Variable, align = "left") |>
+  tab_footnote(footnote = "Percent change in SR calcium release and uptake as depandant variable",
+               locations = cells_column_labels(columns = Estimate)) |>
+  tab_footnote(footnote = "statistically robust results (i.e., 95% CI not containing 0)",
+               locations = cells_body(columns = Estimate,
+                                      rows = c(2, 7)),
+               placement = "right") |>
+  opt_footnote_marks(marks = c("a", "*")) |>
+  fmt_units(columns = Variable) |>
+  cols_label(Variable = "",
+             adj.r = md("R\U00B2 adjusted")) |>
+  tab_header(title = md("**Table 3**. Effect of training responses in SR Ca\U00B2\U207A handling on training responses in cycling performance, VO~2max~ and durability.")) |>
+  tab_source_note(source_note = md("Abbreviations: Release rate; SR Ca\U00B2\U207A release (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Uptake~tau~, half-life (time to decrease by 63%) of [Ca\U00B2\U207A]~free~ during SR Ca\U00B2\U207A uptake (s\U207B\U00B9 \U00B7 mg protein\U207B\U00B9); Uptake~600nM~, rate of SR Ca\U00B2\U207A uptake at 600 nM [Ca\U00B2\U207A]~free~ (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Uptake~200nM~, rate of SR Ca\U00B2\U207A uptake at 200 nM [Ca\U00B2\U207A]~free~ (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Leak rate, rate of SR Ca\U00B2\U207A leak (nmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); SR, sarcoplasmic reticulum."))
+
+
+table.3
+
+
+```
+
+
+Exploratory analysis of potential relationships between baseline values in SR Ca^2+^ handling and baseline values in W~15min~, W~max~, VO~2max~ and durability index showed that one normalized unit higher uptake~600nM~ at baseline was related to `r high_per.pre` higher W~15min~, `r high_wmax.pre` higher W~max~ and `r high_vo2max.pre` higher VO~2max~ values at baseline. Similarly, one normalized unit higher uptake~200nM~ at baseline was related to `r low_per.pre` higher W~15min~, `r low_wmax.pre` higher W~max~ and `r low_vo2max.pre` higher VO~2max~ values at baseline. In contrast, one normalized unit increase in SR Ca^2+^ leak rate at baseline was related to `r leak_per.pre` lower W~15min~, `r leak_wmax.pre` lower W~max~ and `r leak_vo2max.pre` lower VO~2max~ values at baseline. 
+
+Taken together, SR Ca^2+^ release rate do not show any clear relationship with endurance performance at baseline or changes in endurance performance following the training intervention. SR Ca^2+^ uptake rates (uptake~600nM~ and uptake~200nM~) are positively related to endurance performance at baseline, however, a negative relationship with changes in cycling performance following the training intervention (uptake~tau~). SR leak rate at baseline show a negative relationship with baseline endurance performance.  
+
+## SR Ca^2+^ release and uptake in relation to MHC distribution and exercise intensity
+
+```{r}
+
+
+
+
+mhc_re <- readRDS("./data/derivedData/mhc_comp/mhc_re.change.RDS")
+mhc_tau <- readRDS("./data/derivedData/mhc_comp/mhc_tau.change.RDS")
+mhc_high <- readRDS("./data/derivedData/mhc_comp/mhc_slope.high.change.RDS")
+mhc_low <- readRDS("./data/derivedData/mhc_comp/mhc_slope.low.change.RDS")
+mhc_leak <- readRDS("./data/derivedData/mhc_comp/mhc_slope.cpa.change.RDS")
+mhc_m2 <- readRDS("./data/derivedData/mhc_comp/mhc_m2.RDS")
+mhc_m1 <- readRDS("./data/derivedData/mhc_comp/mhc_m1.RDS")
+mhc_re.pre <- readRDS("./data/derivedData/mhc_comp/mhc_re.pre.RDS")
+mhc_tau.pre <- readRDS("./data/derivedData/mhc_comp/mhc_tau.pre.RDS")
+mhc_high.pre <- readRDS("./data/derivedData/mhc_comp/mhc_slope.high.pre.RDS")
+mhc_low.pre <- readRDS("./data/derivedData/mhc_comp/mhc_slope.low.pre.RDS")
+mhc_leak.pre <- readRDS("./data/derivedData/mhc_comp/mhc_slope.cpa.pre.RDS")
+  
+  
+  
+
+
+mhc_confint <- data.frame(confint(mhc_re)) |> 
+  full_join(data.frame(confint(mhc_tau))) |>
+  full_join(data.frame(confint(mhc_high))) |>
+  full_join(data.frame(confint(mhc_low))) |>
+  full_join(data.frame(confint(mhc_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "change_mhc",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+
+
+mhc_adjusted <- data.frame(adj.r = summary(mhc_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(mhc_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+mhc_data <- data.frame(summary(mhc_re)$coef) |> 
+  full_join(data.frame(summary(mhc_tau)$coef)) |>
+  full_join(data.frame(summary(mhc_high)$coef)) |>
+  full_join(data.frame(summary(mhc_low)$coef)) |>
+  full_join(data.frame(summary(mhc_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "change_mhc",
+                      "pre_slope",
+                      "sex"),
+                    5)) |> 
+  filter(coef == "change_mhc") |>
+  left_join(mhc_confint) |>
+  left_join(mhc_adjusted)
+
+
+mhc_m2.conf <- data.frame(confint(mhc_m2)) |>
+  mutate(coef = c("",
+                  "",
+                  "intercept",
+                  "timepoint",
+                  "sexf"))
+
+mhc_m2.dat <- data.frame(summary(mhc_m2)$coef) |> 
+  mutate(coef = c("intercept",
+                  "timepoint",
+                  "sexf")) |>
+  left_join(mhc_m2.conf)
+
+
+mhc_m1.conf <- data.frame(confint(mhc_m1)) |>
+  mutate(coef = c("",
+                  "",
+                  "intercept",
+                  "timepoint",
+                  "sexf",
+                  "sexf:timepoint"))
+
+mhc_m1.dat <- data.frame(summary(mhc_m1)$coef) |> 
+  mutate(coef = c("intercept",
+                  "timepoint",
+                  "sexf",
+                  "sexf:timepoint")) |>
+  left_join(mhc_m1.conf)
+
+
+
+
+mhc.pre_confint <- data.frame(confint(mhc_re.pre)) |> 
+  full_join(data.frame(confint(mhc_tau.pre))) |>
+  full_join(data.frame(confint(mhc_high.pre))) |>
+  full_join(data.frame(confint(mhc_low.pre))) |>
+  full_join(data.frame(confint(mhc_leak.pre))) |>
+  mutate(variable = c(rep("re", 2),
+                      rep("tau", 2),
+                      rep("high", 2),
+                      rep("low", 2),
+                      rep("leak", 2)),
+         coef = rep(c("intercept",
+                      "mhc"),
+                    5))
+
+
+mhc.pre_adjusted <- data.frame(adj.r = summary(mhc_re.pre)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(mhc_tau.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_high.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_low.pre)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(mhc_leak.pre)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+
+
+mhc.pre_data <- data.frame(summary(mhc_re.pre)$coef) |> 
+  full_join(data.frame(summary(mhc_tau.pre)$coef)) |>
+  full_join(data.frame(summary(mhc_high.pre)$coef)) |>
+  full_join(data.frame(summary(mhc_low.pre)$coef)) |>
+  full_join(data.frame(summary(mhc_leak.pre)$coef)) |> 
+  mutate(variable = c(rep("re", 2),
+                      rep("tau", 2),
+                      rep("high", 2),
+                      rep("low", 2),
+                      rep("leak", 2)),
+         coef = rep(c("intercept",
+                      "mhc"),
+                    5)) |> 
+  filter(coef == "mhc") |>
+  left_join(mhc.pre_confint) |>
+  left_join(mhc.pre_adjusted)
+
+
+
+
+
+# MHC composition
+
+## baseline relationship
+re_mhc.pre <- paste0(sprintf("%.3f", mhc.pre_data[1, 1]),
+                     " \U03BCmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.3f", mhc.pre_data[1, 7]),
+                     ", ",
+                     sprintf("%.3f", mhc.pre_data[1, 8]),
+                     "], R\U00B2\U2090 = ",
+                     sprintf("%.2f", mhc.pre_data[1, 9]))
+
+
+
+tau_mhc.pre <- paste0(sprintf("%.3f", mhc.pre_data[2, 1]),
+                     " s\U207B\U00B9 \U00B7 mg protein\U207B\U00B9 [",
+                     sprintf("%.3f", mhc.pre_data[2, 7]),
+                     ", ",
+                     sprintf("%.3f", mhc.pre_data[2, 8]),
+                     "], R\U00B2\U2090 = ",
+                     sprintf("%.2f", mhc.pre_data[2, 9]))
+
+
+high_mhc.pre <- paste0(sprintf("%.3f", mhc.pre_data[3, 1]),
+                     " \U03BCmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.3f", mhc.pre_data[3, 7]),
+                     ", ",
+                     sprintf("%.3f", mhc.pre_data[3, 8]),
+                     "], R\U00B2\U2090 = ",
+                     sprintf("%.2f", mhc.pre_data[3, 9]))
+
+
+low_mhc.pre <- paste0(sprintf("%.3f", mhc.pre_data[4, 1]),
+                     " \U03BCmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.3f", mhc.pre_data[4, 7]),
+                     ", ",
+                     sprintf("%.3f", mhc.pre_data[4, 8]),
+                     "], R\U00B2\U2090 = ",
+                     sprintf("%.2f", mhc.pre_data[4, 9]))
+
+leak_mhc.pre <- paste0(sprintf("%.2f", mhc.pre_data[5, 1]),
+                     " nmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9 [",
+                     sprintf("%.2f", mhc.pre_data[5, 7]),
+                     ", ",
+                     sprintf("%.2f", mhc.pre_data[5, 8]),
+                     "], R\U00B2\U2090 = ",
+                     sprintf("%.2f", mhc.pre_data[5, 9]))
+
+
+
+
+
+
+# change relationship
+re_mhc <- paste0(sprintf("%.1f", (exp(mhc_data[1, 1]) - 1) * 100),
+                         "% [",
+                         sprintf("%.1f", (exp(mhc_data[1, 7]) - 1) * 100), 
+                         ", ",
+                         sprintf("%.1f", (exp(mhc_data[1, 8]) - 1) * 100),
+                         "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", mhc_data[1, 9]))
+
+
+tau_mhc <- paste0(sprintf("%.1f", (exp(mhc_data[2, 1]) - 1) * 100),
+                          "% [",
+                          sprintf("%.1f", (exp(mhc_data[2, 7]) - 1) * 100), 
+                          ", ",
+                          sprintf("%.1f", (exp(mhc_data[2, 8]) - 1) * 100),
+                          "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", mhc_data[2, 9]))
+
+
+high_mhc <- paste0(sprintf("%.1f", (exp(mhc_data[3, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(mhc_data[3, 7]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(mhc_data[3, 8]) - 1) * 100),
+                           "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", mhc_data[3, 9]))
+
+
+low_mhc <- paste0(sprintf("%.1f", (exp(mhc_data[4, 1]) - 1) * 100),
+                          "% [",
+                          sprintf("%.1f", (exp(mhc_data[4, 7]) - 1) * 100), 
+                          ", ",
+                          sprintf("%.1f", (exp(mhc_data[4, 8]) - 1) * 100),
+                          "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", mhc_data[4, 9]))
+
+
+leak_mhc <- paste0(sprintf("%.1f", (exp(mhc_data[5, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(mhc_data[5, 7]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(mhc_data[5, 8]) - 1) * 100),
+                           "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", mhc_data[5, 9]))
+
+
+
+
+change_mhc <- paste0(sprintf("%.1f", mhc_m2.dat[2, 1]),
+                     "%-points [",
+                     sprintf("%.1f", mhc_m2.dat[2, 5]),
+                     ", ",
+                     sprintf("%.1f", mhc_m2.dat[2, 6]),
+                     "]")
+
+
+
+
+sex_mhc <- paste0(sprintf("%.1f", mhc_m1.dat[3, 1]),
+                  "%-points [",
+                  sprintf("%.1f", mhc_m1.dat[3, 5]),
+                  ", ",
+                  sprintf("%.1f", mhc_m1.dat[3, 6]),
+                  "]")
+
+
+sex_change.mhc <- paste0(sprintf("%.1f", mhc_m1.dat[4, 1]),
+                  "%-points [",
+                  sprintf("%.1f", mhc_m1.dat[4, 5]),
+                  ", ",
+                  sprintf("%.1f", mhc_m1.dat[4, 6]),
+                  "]")
+
+
+mhc.sum <- readRDS("./data/derivedData/mhc_comp/mhc_sum.RDS")
+
+
+pre_mhc <- paste0(sprintf("%.1f", mhc.sum[5, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[5, 4]),
+                  "%")
+
+
+post_mhc <- paste0(sprintf("%.1f", mhc.sum[6, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[6, 4]),
+                  "%")
+
+
+pre_f_mhc <- paste0(sprintf("%.1f", mhc.sum[2, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[2, 4]),
+                  "%")
+
+
+pre_m_mhc <- paste0(sprintf("%.1f", mhc.sum[1, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[1, 4]),
+                  "%")
+
+
+
+post_f_mhc <- paste0(sprintf("%.1f", mhc.sum[4, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[4, 4]),
+                  "%")
+
+
+post_m_mhc <- paste0(sprintf("%.1f", mhc.sum[3, 3]),
+                  " \u00b1 ",
+                  sprintf("%.1f", mhc.sum[3, 4]),
+                  "%")
+
+
+
+
+## exercise intensity
+
+
+int_high <- readRDS("./data/derivedData/SR-intensity/intensity_slope.high.RDS")
+int_leak <- readRDS("./data/derivedData/SR-intensity/intensity_slope.cpa.RDS")
+int_low <- readRDS("./data/derivedData/SR-intensity/intensity_slope.low.RDS")
+int_re <- readRDS("./data/derivedData/SR-intensity/intensity_release.RDS")
+int_tau <- readRDS("./data/derivedData/SR-intensity/intensity_tau.RDS")
+mhc_int <- readRDS("./data/derivedData/SR-intensity/mhc.intensity.RDS")
+
+
+int_confint <- data.frame(confint(int_re)) |> 
+  full_join(data.frame(confint(int_tau))) |>
+  full_join(data.frame(confint(int_high))) |>
+  full_join(data.frame(confint(int_low))) |>
+  full_join(data.frame(confint(int_leak))) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "vo2.percent",
+                      "pre_slope",
+                      "sex"),
+                    5))
+
+int_adjusted <- data.frame(adj.r = summary(int_re)$adj.r.squared) |>
+  full_join(data.frame(adj.r = summary(int_tau)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(int_high)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(int_low)$adj.r.squared)) |>
+  full_join(data.frame(adj.r = summary(int_leak)$adj.r.squared)) |>
+  mutate(variable = c("re",
+                      "tau",
+                      "high",
+                      "low",
+                      "leak"))
+
+
+
+
+int_data <- data.frame(summary(int_re)$coef) |> 
+  full_join(data.frame(summary(int_tau)$coef)) |>
+  full_join(data.frame(summary(int_high)$coef)) |>
+  full_join(data.frame(summary(int_low)$coef)) |>
+  full_join(data.frame(summary(int_leak)$coef)) |>
+  mutate(variable = c(rep("re", 4),
+                      rep("tau", 4),
+                      rep("high", 4),
+                      rep("low", 4),
+                      rep("leak", 4)),
+         coef = rep(c("intercept",
+                      "vo2.percent",
+                      "pre_slope",
+                      "sex"),
+                    5)) |> 
+  filter(coef == "vo2.percent") |>
+  left_join(int_confint) |>
+  left_join(int_adjusted)
+
+
+
+
+re_int <- paste0(sprintf("%.1f", (exp(int_data[1, 1]) - 1) * 100),
+                         "% [",
+                         sprintf("%.1f", (exp(int_data[1, 7]) - 1) * 100), 
+                         ", ",
+                         sprintf("%.1f", (exp(int_data[1, 8]) - 1) * 100),
+                         "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", int_data[1, 9]))
+
+
+tau_int <- paste0(sprintf("%.1f", (exp(int_data[2, 1]) - 1) * 100),
+                          "% [",
+                          sprintf("%.1f", (exp(int_data[2, 7]) - 1) * 100), 
+                          ", ",
+                          sprintf("%.1f", (exp(int_data[2, 8]) - 1) * 100),
+                          "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", int_data[2, 9]))
+
+
+high_int <- paste0(sprintf("%.1f", (exp(int_data[3, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(int_data[3, 7]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(int_data[3, 8]) - 1) * 100),
+                           "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", int_data[3, 9]))
+
+
+low_int <- paste0(sprintf("%.1f", (exp(int_data[4, 1]) - 1) * 100),
+                          "% [",
+                          sprintf("%.1f", (exp(int_data[4, 7]) - 1) * 100), 
+                          ", ",
+                          sprintf("%.1f", (exp(int_data[4, 8]) - 1) * 100),
+                          "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", int_data[4, 9]))
+
+
+leak_int <- paste0(sprintf("%.1f", (exp(int_data[5, 1]) - 1) * 100),
+                           "% [",
+                           sprintf("%.1f", (exp(int_data[5, 7]) - 1) * 100), 
+                           ", ",
+                           sprintf("%.1f", (exp(int_data[5, 8]) - 1) * 100),
+                           "], R\U00B2\U2090 = ",
+                         sprintf("%.2f", int_data[5, 9]))
+
+
+
+
+# range of vo2 average 
+
+vo2ses.data <- readRDS("./data/derivedData/training/vo2ses-data.RDS")
+
+
+vo2ses <- paste0(sprintf("%.1f", vo2ses.data[1, 3]),
+               "% to ",
+               sprintf("%.1f", vo2ses.data[1, 4]),
+               "%")
+
+
+
+mhc_int.confint <- data.frame(confint(mhc_int)) |>
+  mutate(variable = c("intercept",
+                      "type1"),
+         type = "mhc_int")
+
+mhc_int_adjusted <- data.frame(adj.r = summary(mhc_int)$adj.r.squared) |>
+  mutate(type = "mhc_int")
+
+mhc_int.data <- data.frame(summary(mhc_int)$coef) |>
+  mutate(variable = c("intercept",
+                      "type1"),
+         type = "mhc_int") |>
+  left_join(mhc_int.confint) |>
+  left_join(mhc_int_adjusted)
+
+
+int_mhc <- paste0(sprintf("%.2f", mhc_int.data[2, 1]),
+                  "% [",
+                  sprintf("%.2f", mhc_int.data[2, 7]),
+                  ", ",
+                  sprintf("%.2f", mhc_int.data[2, 8]),
+                  "], R\U00B2\U2090 = ",
+                  sprintf("%.2f", mhc_int.data[2, 9]))
+
+
+```
+
+
+The 8-week endurance training intervention led to a robust increase in the relative proportion of MHC-II isoforms (pooled MHC-IIa and MHC-IIx) of `r change_mhc`; baseline, `r pre_mhc`; after training, `r post_mhc` (Figure 3). Females had `r sex_mhc` lower proportion of MHC-II at baseline than males (`r pre_f_mhc` vs `r pre_m_mhc`, respectively). However, the change in relative proportion of MHC-II from baseline to after training did not differ between sexes (`r sex_change.mhc`). There was a robust positive relationship between the change in relative proportion of MHC-II and change in uptake~200nM~ of `r low_mhc` increase in uptake~200nM~ coinciding with one %-point increase in the relative proportion of MHC-II (Table 4). Changes in SR Ca^2+^ release rate, Uptake~tau~, uptake~600nM~ and SR Ca^2+^ leak rate did not relate to change in MHC distribution (Table 4). In addition, exploratory analysis of potential relationships between relative proportion of MHC-II at baseline and baseline values in SR Ca^2+^ handling variables did not yield any robust interactions.
+
+Exercise intensity, defined as the percent of VO~2max~ during interval bouts measured at two separate 4x8min session (Figure 1A), ranged from `r vo2ses`. There was a robust negative relationship between exercise intensity and increase in SR Ca^2+^ release rate from baseline to after training of `r re_int` increase in SR Ca^2+^ release coinciding with one %-point increase in exercise intensity (Table 4). However, exercise intensity did not relate to changes in SR Ca^2+^ uptake or SR Ca^2+^ leak rate (Table 4). In addition, there was no relationship between of the relative distribution of MHC-II at baseline and exercise intensity (`r int_mhc`). 
+
+
+```{r}
+
+
+table.4 <- mhc_data |> 
+  full_join(int_data) |>
+  select("Variable" = variable,
+         Estimate,
+         "Standard Error" = Std..Error,
+         "Lower 95% CI" = `X2.5..`,
+         "Upper 95% CI" = `X97.5..`,
+         adj.r,
+         coef) |>
+  mutate(Variable = factor(Variable,
+                           levels = c("re",
+                                      "tau",
+                                      "high",
+                                      "low",
+                                      "leak"),
+                           labels = c("Release rate",
+                                      "Uptake_tau",
+                                      "Uptake_600nM",
+                                      "Uptake_200nM",
+                                      "Leak rate")),
+         coef = factor(coef,
+                       levels = c("change_mhc",
+                                  "vo2.percent"),
+                       labels = c("Change in relative proportion of MHC-II",
+                                  "Percent of maximal oxygen consumption during interval training")),
+         Estimate = (exp(Estimate) - 1) * 100,
+         `Standard Error` = (exp(`Standard Error`) - 1) * 100,
+         `Lower 95% CI` = (exp(`Lower 95% CI`) - 1) * 100,
+         `Upper 95% CI` = (exp(`Upper 95% CI`) - 1) * 100) |>
+  gt(groupname_col = "coef") |>
+  fmt_number(decimals = 2) |>
+  cols_align(Variable, align = "left") |>
+  tab_footnote(footnote = md("percent change in SR calcium release and uptake rates as the dependent variable"),
+               locations = cells_column_labels(columns = Estimate)) |>
+  tab_footnote(footnote = "statistically robust results (i.e., 95% CI not containing 0)",
+               locations = cells_body(columns = Estimate,
+                                      rows = c(4, 6)),
+               placement = "right") |>
+  opt_footnote_marks(marks = c("a", "*")) |>
+  fmt_units(columns = Variable) |>
+  cols_label(Variable = "",
+             adj.r = md("R\U00B2 adjusted")) |>
+  tab_style(style = cell_fill(color = "gray80"),
+            locations = cells_column_labels()) |>
+  tab_options(column_labels.border.top.color = "gray20") |>
+  tab_header(title = md("**Table 4**. Effects of percent of VO~2max~ during interval sessions, and change in relative proportion of MHC-II on SR Ca\U00B2\U207A release and uptake.")) |>
+  tab_source_note(source_note = md("Abbreviations: Release rate; SR Ca\U00B2\U207A release (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Uptake~tau~, half-life (time to decrease by 63%) of [Ca\U00B2\U207A]~free~ during SR Ca\U00B2\U207A uptake (s\U207B\U00B9 \U00B7 mg protein\U207B\U00B9); Uptake~600nM~, rate of SR Ca\U00B2\U207A uptake at 600 nM [Ca\U00B2\U207A]~free~ (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Uptake~200nM~, rate of SR Ca\U00B2\U207A uptake at 200 nM [Ca\U00B2\U207A]~free~ (µmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9); Leak rate, rate of SR Ca\U00B2\U207A leak (nmol \U00B7 g protein\U207B\U00B9 \U00B7 min\U207B\U00B9);  MHC, myosin heavy chain."))
+
+
+table.4
+
+
+```

@@ -1,0 +1,135 @@
+
+```{r, include = FALSE}
+
+source("./R/libs.R")
+source("./R/filter-id.R")
+source("./R/figures-source.R")
+
+# Settings for chunk options
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      dev = "cairo_pdf")
+
+```
+
+
+# Appendix: Written informed consent
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 75
+#| fig-align: "center"
+
+info1 <- image_read("./figures/png/info-1.png")
+
+# Printing the image
+info1 <- print(info1, info = FALSE) 
+
+
+info1
+```
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info2 <- image_read("./figures/png/info-2.png")
+
+# Printing the image
+info2 <- print(info2, info = FALSE) 
+
+
+info2
+```
+
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info3 <- image_read("./figures/png/info-3.png")
+
+# Printing the image
+info3 <- print(info3, info = FALSE) 
+
+
+info3
+```
+
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info4 <- image_read("./figures/png/info-4.png")
+
+# Printing the image
+info4 <- print(info4, info = FALSE) 
+
+
+info4
+```
+
+
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info5 <- image_read("./figures/png/info-5.png")
+
+# Printing the image
+info5 <- print(info5, info = FALSE) 
+
+
+info5
+```
+
+
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info6 <- image_read("./figures/png/info-6.png")
+
+# Printing the image
+info6 <- print(info6, info = FALSE) 
+
+
+info6
+```
+
+
+
+\newpage
+
+```{r}
+#| fig-width: 50
+#| fig-dpi: 90
+#| fig-align: "center"
+
+info7 <- image_read("./figures/png/info-7.png")
+
+# Printing the image
+info7 <- print(info7, info = FALSE) 
+
+
+info7
+```
