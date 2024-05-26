@@ -1,6 +1,6 @@
-# Eight weeks of endurance training increases calcium release and uptake from skeletal muscle sarcoplasmic reticulum in sedentary adults
+# MScthesis: Eight weeks of endurance training increases calcium release and uptake from skeletal muscle sarcoplasmic reticulum in sedentary adults
 
-This repository contains data, code and additional files needed to reproduce the analyses presented in the manuscript titled "Eight weeks of endurance training increases calcium release and uptake from skeletal muscle sarcoplasmic reticulum in sedentary adults".
+This repository contains data, code and additional files needed to reproduce the master thesis presented in the manuscript titled "Eight weeks of endurance training increases calcium release and uptake from skeletal muscle sarcoplasmic reticulum in sedentary adults".
 
 ## Repository strucure
 
